@@ -558,6 +558,17 @@ function HomePage() {
         ))}
       </nav>
 
+      <a
+        className="desktop-whatsapp-float"
+        href="https://wa.me/12242043281"
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Chat with Cedar Healthcare on WhatsApp"
+      >
+        <Icon name="whatsapp" size={25} />
+        <span>Chat with us</span>
+      </a>
+
       {storyOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setStoryOpen(false) }}>
           <section className="story-modal" role="dialog" aria-modal="true" aria-labelledby="story-modal-title">
