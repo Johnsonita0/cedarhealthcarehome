@@ -601,7 +601,7 @@ function AdminPage() {
               <Icon name="bell" size={19} />
               {unreadNotificationCount > 0 && <span className="admin-notification-count">{unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}</span>}
             </button>
-            <button className="admin-profile-trigger" type="button" aria-label="Open CedarAdmin account menu" aria-haspopup="dialog" onClick={() => setProfileModalOpen(true)}>C</button>
+            <button className="admin-profile-trigger" type="button" aria-label="Open CedarAdmin account menu" aria-haspopup="dialog" onClick={() => setProfileModalOpen(true)}><Icon name="user" size={18} /></button>
             <div><strong>CedarAdmin</strong><small>{session.user.email}</small></div>
           </div>
         </header>
@@ -713,7 +713,7 @@ function AdminPage() {
         <div className="admin-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setProfileModalOpen(false) }}>
           <section className="admin-modal admin-profile-modal" role="dialog" aria-modal="true" aria-labelledby="admin-profile-title">
             <div className="admin-modal__heading"><div><p className="admin-kicker">Account</p><h2 id="admin-profile-title">Profile</h2></div><button type="button" aria-label="Close account menu" onClick={() => setProfileModalOpen(false)}><Icon name="close" size={20} /></button></div>
-            <div className="admin-profile-details"><span>C</span><div><strong>CedarAdmin</strong><small>{session.user.email}</small></div></div>
+            <div className="admin-profile-details"><span><Icon name="user" size={20} /></span><div><strong>CedarAdmin</strong><small>{session.user.email}</small></div></div>
             <div className="admin-modal__actions"><button className="admin-secondary-button" type="button" onClick={() => setProfileModalOpen(false)}>Close</button><button className="admin-danger-button" type="button" onClick={signOut}><Icon name="close" size={15} /> Sign out</button></div>
           </section>
         </div>
