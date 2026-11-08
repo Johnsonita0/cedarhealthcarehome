@@ -2,19 +2,52 @@ import { useEffect, useState } from 'react'
 import AOS from 'aos'
 import 'aos/dist/aos.css'
 import { Brand, FormStatus, Icon, PortalLink } from '../components/UI.jsx'
+import { defaultSiteContent } from '../data/adminDefaults.js'
 import { privacyPolicy, termsOfUse } from '../data/legalContent.js'
+import { useToast } from '../components/ToastProvider.jsx'
 
 const phoneNumber = '224-204-3281'
 const phoneLink = 'tel:+12242043281'
 const emailAddress = 'cedarhealthcarehome@gmail.com'
 const cardAosAnimations = ['fade-up', 'zoom-in', 'fade-down']
 const cardAosByKey = new Map()
+const fallbackStorySlides = [
+  { id: 'cedar-home', story: 'Home is more than a place. It’s where people feel like themselves.', name: 'Cedar Healthcare', relationship: 'Our approach' },
+  { id: 'cedar-independence', story: 'Care should protect your independence and make room for what matters most.', name: 'Cedar Healthcare', relationship: 'Our promise' },
+  { id: 'cedar-seen', story: 'Good care begins with being seen.', name: 'Cedar Healthcare', relationship: 'Our belief' },
+  { id: 'cedar-routine', story: 'Thoughtful everyday support should fit your routine.', name: 'Cedar Healthcare', relationship: 'Everyday care' },
+  { id: 'cedar-listen', story: 'A care team that listens and follows through.', name: 'Cedar Healthcare', relationship: 'Here when it matters' },
+]
 
 function getCardAosAnimation(key) {
   if (!cardAosByKey.has(key)) {
     cardAosByKey.set(key, cardAosAnimations[Math.floor(Math.random() * cardAosAnimations.length)])
   }
   return cardAosByKey.get(key)
+}
+
+async function fetchPublishedTestimonials() {
+  try {
+    const apiResponse = await fetch('/api/testimonials')
+    if (apiResponse.ok && apiResponse.headers.get('content-type')?.includes('application/json')) {
+      return apiResponse.json()
+    }
+  } catch {
+    // Vite's static dev server does not provide Vercel API routes.
+  }
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+  if (!supabaseUrl || !publishableKey) throw new Error('Stories are temporarily unavailable.')
+
+  const url = new URL('/rest/v1/testimonials', supabaseUrl)
+  url.searchParams.set('select', 'id,name,relationship,story,rating,location,created_at')
+  url.searchParams.set('is_published', 'eq.true')
+  url.searchParams.set('order', 'created_at.desc')
+  url.searchParams.set('limit', '5')
+  const response = await fetch(url, { headers: { apikey: publishableKey } })
+  if (!response.ok) throw new Error('Stories are temporarily unavailable.')
+  return { testimonials: await response.json() }
 }
 
 const heroSlides = [
@@ -100,36 +133,22 @@ const services = [
   },
 ]
 
-const faqs = [
-  {
-    question: 'What services do you offer?',
-    answer: 'We offer personal care, skilled nursing, specialized care, companionship, homemaker services, and 24/7 availability.',
-  },
-  {
-    question: 'How do I request care?',
-    answer: 'Send us a care request using the form on this page or call us at 224-204-3281. Our team will be in touch to learn more about your needs.',
-  },
-  {
-    question: 'Where does Cedar Healthcare provide care?',
-    answer: 'Our office is in Chicago, Illinois. Call our team to talk about care availability in your area.',
-  },
-  {
-    question: 'Can I talk with someone before choosing a service?',
-    answer: 'Absolutely. Call us or send a request and we will help you explore the options that may be right for you and your family.',
-  },
-]
-
 function HomePage() {
+  const { showToast } = useToast()
   const [activeHeroSlide, setActiveHeroSlide] = useState(0)
+  const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0)
+  const [testimonialCarouselPaused, setTestimonialCarouselPaused] = useState(false)
   const [requestStatus, setRequestStatus] = useState(null)
   const [newsletterStatus, setNewsletterStatus] = useState(null)
   const [newsletterModalOpen, setNewsletterModalOpen] = useState(false)
   const [storyOpen, setStoryOpen] = useState(false)
+  const [storyRating, setStoryRating] = useState(5)
   const [storyStatus, setStoryStatus] = useState(null)
   const [legalModal, setLegalModal] = useState(null)
   const [testimonials, setTestimonials] = useState([])
   const [storiesError, setStoriesError] = useState(false)
   const [showBackToTop, setShowBackToTop] = useState(false)
+  const [siteContent, setSiteContent] = useState(null)
 
   useEffect(() => {
     const root = document.documentElement
@@ -161,18 +180,39 @@ function HomePage() {
   }, [testimonials])
 
   useEffect(() => {
+    const slideCount = testimonials.length || (storiesError ? 0 : fallbackStorySlides.length)
+    if (
+      slideCount < 2
+      || testimonialCarouselPaused
+      || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) return undefined
+
+    const intervalId = window.setInterval(() => {
+      setActiveTestimonialIndex((currentIndex) => (currentIndex + 1) % slideCount)
+    }, 5000)
+    return () => window.clearInterval(intervalId)
+  }, [testimonials.length, testimonialCarouselPaused, storiesError])
+
+  useEffect(() => {
     let active = true
-    fetch('/api/testimonials')
-      .then(async (response) => {
-        if (!response.ok) throw new Error('Unable to load testimonials')
-        return response.json()
-      })
+    fetchPublishedTestimonials()
       .then((data) => {
         if (active) setTestimonials(data.testimonials)
       })
       .catch(() => {
         if (active) setStoriesError(true)
       })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/site-content')
+      .then((response) => response.ok ? response.json() : null)
+      .then((result) => {
+        if (active && result?.content && Object.keys(result.content).length) setSiteContent(result.content)
+      })
+      .catch(() => {})
     return () => { active = false }
   }, [])
 
@@ -246,8 +286,15 @@ function HomePage() {
           ? 'Thank you. Your care request is on its way to our team.'
           : 'Your request was saved, but our team could not be notified by email. Please call us if your request is urgent.',
       })
+      showToast(
+        result.notificationSent
+          ? 'Your care request was sent. Cedar will be in touch soon.'
+          : 'Your request was saved, but Cedar could not be notified by email.',
+        result.notificationSent ? 'success' : 'warning',
+      )
     } catch (error) {
       setRequestStatus({ type: 'error', message: error.message })
+      showToast(error.message || 'We could not send your request. Please try again.', 'error')
     }
   }
 
@@ -272,8 +319,13 @@ function HomePage() {
           ? 'You’re on the list. Look out for a welcome note from Cedar.'
           : 'You’re subscribed, but we could not send a confirmation email just now.',
       })
+      showToast(
+        result.emailSent ? 'You’re subscribed. Look out for a welcome note.' : 'You’re subscribed, but we could not send a confirmation email.',
+        result.emailSent ? 'success' : 'warning',
+      )
     } catch (error) {
       setNewsletterStatus({ type: 'error', message: error.message })
+      showToast(error.message || 'We could not complete your subscription. Please try again.', 'error')
     }
   }
 
@@ -291,14 +343,20 @@ function HomePage() {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'Your story could not be sent. Please try again.')
       form.reset()
+      setStoryRating(5)
       setStoryStatus({
         type: result.notificationSent ? 'success' : 'notice',
         message: result.notificationSent
           ? 'Thank you for sharing. Your story has been sent for review before it is published.'
           : 'Your story was saved, but our team could not be notified. Please call us to follow up.',
       })
+      showToast(
+        result.notificationSent ? 'Thank you. Your story is on its way for review.' : 'Your story was saved, but the team could not be notified.',
+        result.notificationSent ? 'success' : 'warning',
+      )
     } catch (error) {
       setStoryStatus({ type: 'error', message: error.message })
+      showToast(error.message || 'We could not send your story. Please try again.', 'error')
     }
   }
 
@@ -309,12 +367,38 @@ function HomePage() {
     ['FAQs', '#faq'],
     ['Contact', '#contact'],
   ]
-  const heroSlide = heroSlides[activeHeroSlide]
+  const defaultHeroSlide = heroSlides[activeHeroSlide]
+  const heroSlide = siteContent?.hero && activeHeroSlide === 0
+    ? {
+        ...defaultHeroSlide,
+        image: siteContent.hero.image || defaultHeroSlide.image,
+        eyebrow: siteContent.hero.eyebrow || defaultHeroSlide.eyebrow,
+        title: siteContent.hero.headline || defaultHeroSlide.title,
+        description: siteContent.hero.introduction || defaultHeroSlide.description,
+        primaryLabel: siteContent.hero.primaryLabel,
+        primaryUrl: siteContent.hero.primaryUrl,
+        secondaryLabel: siteContent.hero.secondaryLabel,
+        secondaryUrl: siteContent.hero.secondaryUrl,
+      }
+    : defaultHeroSlide
+  const carouselStories = testimonials.length
+    ? testimonials
+    : storiesError ? [] : fallbackStorySlides
+  const carouselIndex = carouselStories.length ? activeTestimonialIndex % carouselStories.length : 0
+  const pageFaqs = siteContent?.faqs || defaultSiteContent.faqs
   const shareUrl = typeof window === 'undefined' ? '' : encodeURIComponent(window.location.origin)
-  const legalDocument = legalModal === 'privacy' ? privacyPolicy : termsOfUse
+  const legalDocument = legalModal === 'privacy'
+    ? siteContent?.privacyPolicy || privacyPolicy
+    : siteContent?.termsOfUse || termsOfUse
 
   function closeNewsletterModal() {
     setNewsletterModalOpen(false)
+  }
+
+  function openStoryForm() {
+    setStoryOpen(true)
+    setStoryStatus(null)
+    setStoryRating(5)
   }
 
   return (
@@ -357,8 +441,8 @@ function HomePage() {
                   <h1>{heroSlide.title}</h1>
                   <p className="hero__intro">{heroSlide.description}</p>
                   <div className="hero__actions">
-                    <a className="button button--green" href="#contact">Let’s talk about care</a>
-                    <PortalLink className="button button--outline" />
+                    <a className="button button--green" href={heroSlide.primaryUrl || '#contact'}>{heroSlide.primaryLabel || 'Let’s talk about care'}</a>
+                    <PortalLink className="button button--outline" label={heroSlide.secondaryLabel} url={heroSlide.secondaryUrl} />
                   </div>
                   <div className="hero__reassurance">
                     <span className="hero__reassurance-icon"><Icon name="heart" size={18} /></span>
@@ -434,18 +518,38 @@ function HomePage() {
               </div>
               <p className="section-heading__aside">Every family’s experience is their own. We share stories only with permission, and every story is reviewed before it appears here.</p>
             </div>
-            {testimonials.length > 0 ? (
-              <div className="stories__grid">
-                {testimonials.map((item) => (
-                  <article className="story-card" data-aos={getCardAosAnimation(`story-${item.id}`)} key={item.id}>
-                    <Icon name="quote" size={23} className="story-card__quote" />
-                    <p className="story-card__text">{item.story}</p>
-                    <div className="story-card__author">
-                      <span className="story-card__avatar">{(item.name || 'C').charAt(0).toUpperCase()}</span>
-                      <span><strong>{item.name}</strong><small>{item.relationship}</small></span>
-                    </div>
-                  </article>
-                ))}
+            {carouselStories.length > 0 ? (
+              <div
+                className="stories__carousel"
+                aria-label={testimonials.length ? 'Cedar Healthcare testimonials' : 'The Cedar approach'}
+                aria-roledescription="carousel"
+                onMouseEnter={() => setTestimonialCarouselPaused(true)}
+                onMouseLeave={() => setTestimonialCarouselPaused(false)}
+                onFocusCapture={() => setTestimonialCarouselPaused(true)}
+                onBlurCapture={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget)) setTestimonialCarouselPaused(false)
+                }}
+              >
+                <button className="stories__carousel-arrow stories__carousel-arrow--previous" type="button" aria-label="Previous story" disabled={carouselStories.length < 2} onClick={() => setActiveTestimonialIndex((carouselIndex + carouselStories.length - 1) % carouselStories.length)}><Icon name="arrow" size={19} /></button>
+                {(() => {
+                  const item = carouselStories[carouselIndex]
+                  if (!item) return null
+                  const isFallback = !testimonials.length
+                  return (
+                    <article className={`story-card stories__carousel-card${isFallback ? ' stories__carousel-card--fallback' : ''}`} data-aos={getCardAosAnimation(`story-${item.id}`)} key={item.id} aria-roledescription="slide" aria-label={`${carouselIndex + 1} of ${carouselStories.length}`}>
+                      {isFallback && <small className="stories__fallback-label">The Cedar approach</small>}
+                      <Icon name="quote" size={23} className="story-card__quote" />
+                      {!isFallback && <div className="story-card__rating" aria-label={`${item.rating || 5} out of 5 stars`}>{'★'.repeat(item.rating || 5)}<span>{'★'.repeat(5 - (item.rating || 5))}</span></div>}
+                      <p className="story-card__text">{item.story}</p>
+                      <div className="story-card__author">
+                        <span className="story-card__avatar">{(item.name || 'C').charAt(0).toUpperCase()}</span>
+                        <span><strong>{item.name}</strong><small>{item.relationship}{item.location ? ` · ${item.location}` : ''}</small></span>
+                      </div>
+                    </article>
+                  )
+                })()}
+                <button className="stories__carousel-arrow" type="button" aria-label="Next story" disabled={carouselStories.length < 2} onClick={() => setActiveTestimonialIndex((carouselIndex + 1) % carouselStories.length)}><Icon name="arrow" size={19} /></button>
+                {carouselStories.length > 1 && <div className="stories__carousel-controls"><div>{carouselStories.map((item, index) => <button type="button" key={item.id} className={index === carouselIndex ? 'is-active' : ''} aria-label={`Show story ${index + 1}`} aria-current={index === carouselIndex ? 'true' : undefined} onClick={() => setActiveTestimonialIndex(index)} />)}</div></div>}
               </div>
             ) : (
               <div className={`stories__empty${storiesError ? ' stories__empty--error' : ''}`}>
@@ -454,10 +558,10 @@ function HomePage() {
                   <h3>{storiesError ? 'Stories are taking a little break.' : 'This page is ready for your story.'}</h3>
                   <p>{storiesError ? 'Please check back soon, or call our team if you have a question.' : 'When a family chooses to share their experience, we’ll make room for it here.'}</p>
                 </div>
-                {!storiesError && <button className="text-link" type="button" onClick={() => { setStoryOpen(true); setStoryStatus(null) }}>Share your experience</button>}
+                {!storiesError && <button className="text-link" type="button" onClick={openStoryForm}>Share your experience</button>}
               </div>
             )}
-            {testimonials.length > 0 && <button className="text-link stories__share" type="button" onClick={() => { setStoryOpen(true); setStoryStatus(null) }}>Share your experience</button>}
+            {!storiesError && <button className="text-link stories__share" type="button" onClick={openStoryForm}>Share your experience</button>}
           </div>
         </section>
 
@@ -470,7 +574,7 @@ function HomePage() {
               <a className="text-link" href="#contact">Ask us anything <Icon name="arrow" size={16} /></a>
             </div>
             <div className="faq__list">
-              {faqs.map((faq, index) => (
+              {pageFaqs.map((faq, index) => (
                 <details className="faq-item" data-aos={getCardAosAnimation(`faq-${faq.question}`)} key={faq.question} open={index === 0}>
                   <summary><span>{faq.question}</span><span className="faq-item__toggle" aria-hidden="true" /></summary>
                   <p>{faq.answer}</p>
@@ -621,6 +725,15 @@ function HomePage() {
               <input id="story-name" name="name" autoComplete="name" maxLength="120" required />
               <label htmlFor="story-relationship">Your relationship to Cedar <span>*</span></label>
               <input id="story-relationship" name="relationship" placeholder="For example, client or family member" maxLength="120" required />
+              <fieldset className="story-rating">
+                <legend>Your rating <span>*</span></legend>
+                <div role="radiogroup" aria-label="Rating from one to five stars">
+                  {[1, 2, 3, 4, 5].map((rating) => <label className={`story-rating__choice${rating <= storyRating ? ' is-selected' : ''}`} key={rating}><input type="radio" name="rating" value={rating} checked={storyRating === rating} onChange={() => setStoryRating(rating)} required /><span aria-hidden="true">★</span><span className="sr-only">{rating} {rating === 1 ? 'star' : 'stars'}</span></label>)}
+                </div>
+                <small>{storyRating} out of 5 stars</small>
+              </fieldset>
+              <label htmlFor="story-location">Neighborhood or city <span className="story-form__optional">Optional</span></label>
+              <input id="story-location" name="location" placeholder="For example, Chicago, IL" maxLength="100" />
               <label htmlFor="story-message">Your experience <span>*</span></label>
               <textarea id="story-message" name="story" rows="4" maxLength="2000" required />
               <button className="button button--green" type="submit">Send for review</button>

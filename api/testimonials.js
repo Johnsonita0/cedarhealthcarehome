@@ -14,10 +14,10 @@ export default async function handler(req, res) {
 
   try {
     const url = new URL(`${config.SUPABASE_URL}/rest/v1/testimonials`)
-    url.searchParams.set('select', 'id,name,relationship,story')
+    url.searchParams.set('select', 'id,name,relationship,story,rating,location,created_at')
     url.searchParams.set('is_published', 'eq.true')
     url.searchParams.set('order', 'created_at.desc')
-    url.searchParams.set('limit', '3')
+    url.searchParams.set('limit', '5')
     const response = await fetch(url, {
       headers: {
         apikey: config.SUPABASE_SERVICE_ROLE_KEY,

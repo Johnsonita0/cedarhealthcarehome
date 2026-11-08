@@ -20,6 +20,7 @@ export function Icon({ name, size = 22, className = '' }) {
   const paths = {
     arrow: <><path d="M4.5 12h14" /><path d="m13 5.5 6.5 6.5-6.5 6.5" /></>,
     'arrow-up': <><path d="M12 19V5" /><path d="m5.5 11.5 6.5-6.5 6.5 6.5" /></>,
+    image: <><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></>,
     cedar: <><path d="M19 6a9 9 0 1 0 0 12" /><circle cx="18.5" cy="5.5" r="1.8" fill="currentColor" stroke="none" /></>,
     care: <><path d="M12 21s-7.5-4.6-7.5-11a4.25 4.25 0 0 1 7.5-2.7 4.25 4.25 0 0 1 7.5 2.7c0 6.4-7.5 11-7.5 11Z" /><path d="M8.8 12h6.4M12 8.8v6.4" /></>,
     health: <><path d="M12 21s-7.5-4.6-7.5-11a4.25 4.25 0 0 1 7.5-2.7 4.25 4.25 0 0 1 7.5 2.7c0 6.4-7.5 11-7.5 11Z" /><path d="M8.7 12h6.6M12 8.7v6.6" /></>,
@@ -51,17 +52,19 @@ export function Brand({ light = false }) {
   )
 }
 
-export function PortalLink({ className = 'button button--outline', compact = false }) {
+export function PortalLink({ className = 'button button--outline', compact = false, label = 'Open App', url = '' }) {
   const [notice, setNotice] = useState(false)
-  const label = notice ? (compact ? 'Coming soon' : 'Client app coming soon') : 'Open App'
+  const buttonLabel = notice ? (compact ? 'Coming soon' : 'Client app coming soon') : label
+  const resolvedUrl = url || clientAppUrl
 
-  if (clientAppUrl) {
-    return <a className={className} href={clientAppUrl} target="_blank" rel="noreferrer">{label}</a>
+  if (resolvedUrl) {
+    const external = /^https?:\/\//i.test(resolvedUrl)
+    return <a className={className} href={resolvedUrl} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined}>{buttonLabel}</a>
   }
 
   return (
     <button className={className} type="button" onClick={() => setNotice(true)}>
-      {label}
+      {buttonLabel}
       {notice && <span className="sr-only" role="status">The client app link will be available soon. Please call Cedar Healthcare for help.</span>}
     </button>
   )

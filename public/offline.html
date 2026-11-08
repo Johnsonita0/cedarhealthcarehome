@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#07520b" />
+    <title>Connection interrupted | Cedar Healthcare</title>
+    <style>
+      :root { color-scheme: light; font-family: "DM Sans", "Trebuchet MS", sans-serif; color: #203529; background: #f7f9f5; }
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; display: grid; place-items: center; margin: 0; padding: 28px; }
+      main { width: min(100%, 940px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .9fr); align-items: center; gap: clamp(24px, 6vw, 72px); }
+      .brand { display: flex; align-items: center; gap: 10px; color: #07520b; font-size: 15px; font-weight: 700; }
+      .brand-mark { width: 37px; height: 37px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #07520b; font: 20px Georgia, serif; }
+      .eyebrow { margin: 35px 0 11px; color: #67806d; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+      h1 { max-width: 470px; margin: 0; color: #1b382b; font-size: clamp(34px, 5vw, 52px); font-weight: 600; line-height: 1.08; }
+      .intro { max-width: 425px; margin: 17px 0 24px; color: #68776d; font-size: 14px; line-height: 1.8; }
+      .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+      a, button { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; padding: 0 16px; border: 1px solid #d6e1d8; border-radius: 5px; color: #28523a; background: #fff; font: 600 11px "DM Sans", "Trebuchet MS", sans-serif; text-decoration: none; cursor: pointer; }
+      .primary { border-color: #07520b; color: #fff; background: #07520b; }
+      figure { margin: 0; padding: 22px; border: 1px solid #e2ebe4; border-radius: 9px; background: #fff; }
+      svg { width: 100%; height: auto; display: block; }
+      @media (max-width: 680px) { body { padding: 24px 20px; } main { grid-template-columns: 1fr; gap: 25px; } .eyebrow { margin-top: 26px; } figure { grid-row: 1; width: min(100%, 360px); justify-self: center; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section>
+        <div class="brand"><span class="brand-mark" aria-hidden="true">C</span><span>Cedar Healthcare</span></div>
+        <p class="eyebrow">A small connection pause</p>
+        <h1>We’ll be right here when you’re back online.</h1>
+        <p class="intro">It looks like your connection has dropped. You can try again, or call our Chicago team if you need to reach us now.</p>
+        <div class="actions">
+          <a class="primary" href="/">Try again</a>
+          <a href="tel:+12242043281">Call 224-204-3281</a>
+        </div>
+      </section>
+      <figure>
+        <svg viewBox="0 0 420 340" role="img" aria-labelledby="offline-art-title offline-art-description" xmlns="http://www.w3.org/2000/svg">
+          <title id="offline-art-title">Care team at home</title>
+          <desc id="offline-art-description">A caregiver checks in on an older adult in a home, with a healthcare cross above them.</desc>
+          <rect x="22" y="22" width="376" height="296" rx="12" fill="#eff5ef" />
+          <path d="M77 163 210 68l133 95v113H77V163Z" fill="#fff" stroke="#bed0c2" stroke-width="5" stroke-linejoin="round" />
+          <path d="M61 164 210 56l149 108" fill="none" stroke="#2c6c42" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+          <rect x="184" y="189" width="55" height="87" rx="5" fill="#e6efe7" stroke="#bed0c2" stroke-width="4" />
+          <circle cx="214" cy="231" r="3" fill="#8ba18e" />
+          <rect x="107" y="171" width="50" height="47" rx="5" fill="#e8f1e9" stroke="#bed0c2" stroke-width="4" />
+          <path d="M132 171v47m-25-24h50" stroke="#bed0c2" stroke-width="3" />
+          <circle cx="273" cy="169" r="24" fill="#d5b28a" />
+          <path d="M250 166c2-20 13-31 28-31 12 0 23 10 25 26-11-3-21-9-28-17-4 9-12 17-25 22Z" fill="#6d5142" />
+          <path d="M239 265c3-39 16-61 36-61 22 0 35 22 38 61" fill="#75a384" />
+          <circle cx="179" cy="183" r="22" fill="#d3a779" />
+          <path d="M158 180c2-20 12-29 25-29 11 0 20 8 22 23-10-2-19-7-25-14-4 8-11 15-22 20Z" fill="#5f4637" />
+          <path d="M145 266c3-35 15-55 35-55 18 0 30 20 33 55" fill="#39764d" />
+          <path d="M205 203c10 6 20 6 30 0" fill="none" stroke="#d7b783" stroke-width="7" stroke-linecap="round" />
+          <circle cx="329" cy="81" r="28" fill="#f2d556" />
+          <path d="M329 66v30m-15-15h30" stroke="#07520b" stroke-width="6" stroke-linecap="round" />
+          <path d="M89 281h240" stroke="#d8e5da" stroke-width="5" stroke-linecap="round" />
+        </svg>
+      </figure>
+    </main>
+  </body>
+</html>
