@@ -363,9 +363,7 @@ function HomePage() {
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      setActiveHeroSlide((currentSlide) => (
-        (currentSlide + 1 + Math.floor(Math.random() * (heroSlides.length - 1))) % heroSlides.length
-      ))
+      setActiveHeroSlide((currentSlide) => (currentSlide + 1) % heroSlides.length)
     }, 7000)
 
     return () => window.clearInterval(intervalId)
