@@ -3,7 +3,6 @@ import AOS from 'aos'
 import 'aos/dist/aos.css'
 import { Brand, FormStatus, Icon, PortalLink } from '../components/UI.jsx'
 import { defaultSiteContent } from '../data/adminDefaults.js'
-import { privacyPolicy, termsOfUse } from '../data/legalContent.js'
 import { useToast } from '../components/ToastProvider.jsx'
 
 const phoneNumber = '224-204-3281'
@@ -13,11 +12,11 @@ const whatsappContactUrl = `https://wa.me/12242043281?text=${encodeURIComponent(
 const cardAosAnimations = ['fade-up', 'zoom-in', 'fade-down']
 const cardAosByKey = new Map()
 const fallbackStorySlides = [
-  { id: 'cedar-home', story: 'Home is more than a place. It’s where people feel like themselves.', name: 'Cedar Healthcare', relationship: 'Our approach' },
-  { id: 'cedar-independence', story: 'Care should protect your independence and make room for what matters most.', name: 'Cedar Healthcare', relationship: 'Our promise' },
-  { id: 'cedar-seen', story: 'Good care begins with being seen.', name: 'Cedar Healthcare', relationship: 'Our belief' },
-  { id: 'cedar-routine', story: 'Thoughtful everyday support should fit your routine.', name: 'Cedar Healthcare', relationship: 'Everyday care' },
-  { id: 'cedar-listen', story: 'A care team that listens and follows through.', name: 'Cedar Healthcare', relationship: 'Here when it matters' },
+  { id: 'cedar-home', story: 'Home is more than a place. It’s where people feel like themselves.', name: 'Cedar Healthcare', relationship: 'Our approach', isFallback: true },
+  { id: 'cedar-independence', story: 'Care should protect your independence and make room for what matters most.', name: 'Cedar Healthcare', relationship: 'Our promise', isFallback: true },
+  { id: 'cedar-seen', story: 'Good care begins with being seen.', name: 'Cedar Healthcare', relationship: 'Our belief', isFallback: true },
+  { id: 'cedar-routine', story: 'Thoughtful everyday support should fit your routine.', name: 'Cedar Healthcare', relationship: 'Everyday care', isFallback: true },
+  { id: 'cedar-listen', story: 'A care team that listens and follows through.', name: 'Cedar Healthcare', relationship: 'Here when it matters', isFallback: true },
 ]
 
 function getCardAosAnimation(key) {
@@ -271,7 +270,7 @@ const heroSlideCandidates = [
   },
 ]
 const heroSlides = heroSlideCandidates.reduce((uniqueSlides, slide) => {
-  if (!slide.brandSlide && !uniqueSlides.some((item) => item.image === slide.image)) uniqueSlides.push(slide)
+  if (slide.brandSlide || !uniqueSlides.some((item) => item.image === slide.image)) uniqueSlides.push(slide)
   return uniqueSlides
 }, [])
 const services = [
@@ -318,7 +317,6 @@ function HomePage() {
   const [storyOpen, setStoryOpen] = useState(false)
   const [storyRating, setStoryRating] = useState(5)
   const [storyStatus, setStoryStatus] = useState(null)
-  const [legalModal, setLegalModal] = useState(null)
   const [testimonials, setTestimonials] = useState([])
   const [storiesError, setStoriesError] = useState(false)
   const [showBackToTop, setShowBackToTop] = useState(false)
@@ -354,7 +352,7 @@ function HomePage() {
   }, [testimonials])
 
   useEffect(() => {
-    const slideCount = testimonials.length || (storiesError ? 0 : fallbackStorySlides.length)
+    const slideCount = testimonials.length + fallbackStorySlides.length
     if (
       slideCount < 2
       || testimonialCarouselPaused
@@ -365,7 +363,7 @@ function HomePage() {
       setActiveTestimonialIndex((currentIndex) => (currentIndex + 1) % slideCount)
     }, 5000)
     return () => window.clearInterval(intervalId)
-  }, [testimonials.length, testimonialCarouselPaused, storiesError])
+  }, [testimonials.length, testimonialCarouselPaused])
 
   useEffect(() => {
     let active = true
@@ -393,7 +391,7 @@ function HomePage() {
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setActiveHeroSlide((currentSlide) => (currentSlide + 1) % heroSlides.length)
-    }, 7000)
+    }, 8000)
 
     return () => window.clearTimeout(timeoutId)
   }, [activeHeroSlide])
@@ -416,13 +414,11 @@ function HomePage() {
   }, [])
 
   useEffect(() => {
-    if (!newsletterModalOpen && !storyOpen && !legalModal) return undefined
+    if (!newsletterModalOpen && !storyOpen) return undefined
 
     const closeOnEscape = (event) => {
       if (event.key !== 'Escape') return
-      if (legalModal) {
-        setLegalModal(null)
-      } else if (storyOpen) {
+      if (storyOpen) {
         setStoryOpen(false)
       } else if (newsletterModalOpen) {
         setNewsletterModalOpen(false)
@@ -436,7 +432,7 @@ function HomePage() {
       document.body.style.overflow = originalOverflow
       window.removeEventListener('keydown', closeOnEscape)
     }
-  }, [newsletterModalOpen, storyOpen, legalModal])
+  }, [newsletterModalOpen, storyOpen])
 
   async function submitRequest(event) {
     event.preventDefault()
@@ -555,16 +551,10 @@ function HomePage() {
     }
   })
   const heroSlide = carouselSlides[activeHeroSlide]
-  const carouselStories = testimonials.length
-    ? testimonials
-    : storiesError ? [] : fallbackStorySlides
+  const carouselStories = [...testimonials, ...fallbackStorySlides]
   const carouselIndex = carouselStories.length ? activeTestimonialIndex % carouselStories.length : 0
   const pageFaqs = siteContent?.faqs || defaultSiteContent.faqs
   const shareUrl = typeof window === 'undefined' ? '' : encodeURIComponent(window.location.origin)
-  const legalDocument = legalModal === 'privacy'
-    ? siteContent?.privacyPolicy || privacyPolicy
-    : siteContent?.termsOfUse || termsOfUse
-
   function closeNewsletterModal() {
     setNewsletterModalOpen(false)
   }
@@ -624,18 +614,6 @@ function HomePage() {
                   </div>
                 </div>
                 <span className="hero__image-tag"><Icon name="spark" size={17} /> {heroSlide.imageCaption}</span>
-                <div className="hero__slide-controls" role="group" aria-label="Hero slides">
-                  {carouselSlides.map((slide, index) => (
-                    <button
-                      className="hero__slide-control"
-                      type="button"
-                      key={`${slide.image}-${index}`}
-                      aria-label={`Show slide ${index + 1}: ${slide.imageCaption}`}
-                      aria-current={index === activeHeroSlide ? 'true' : undefined}
-                      onClick={() => setActiveHeroSlide(index)}
-                    />
-                  ))}
-                </div>
               </div>
             </div>
           </div>
@@ -648,9 +626,9 @@ function HomePage() {
         <section className="services section-pad" id="services">
           <div className="container">
             <div className="section-heading section-heading--center">
-              <p className="eyebrow"><span className="eyebrow__line" /> Care for the whole you</p>
+              <p className="eyebrow"><span className="eyebrow__line" /> Home care in Chicago, Illinois</p>
               <h2>Support for every<br /><em>part of life.</em></h2>
-              <p>Every person is different. We take time to understand what matters to you, then build care around it.</p>
+              <p>Cedar Healthcare offers personal care, skilled nursing, specialized care, companionship, and homemaker services in Chicago, Illinois.</p>
             </div>
             <div className="services__grid">
               {services.map((service) => (
@@ -707,7 +685,7 @@ function HomePage() {
             {carouselStories.length > 0 ? (
               <div
                 className="stories__carousel"
-                aria-label={testimonials.length ? 'Cedar Healthcare testimonials' : 'The Cedar approach'}
+                aria-label={testimonials.length ? 'Testimonials and the Cedar approach' : 'The Cedar approach'}
                 aria-roledescription="carousel"
                 onMouseEnter={() => setTestimonialCarouselPaused(true)}
                 onMouseLeave={() => setTestimonialCarouselPaused(false)}
@@ -720,7 +698,7 @@ function HomePage() {
                 {(() => {
                   const item = carouselStories[carouselIndex]
                   if (!item) return null
-                  const isFallback = !testimonials.length
+                  const isFallback = Boolean(item.isFallback)
                   return (
                     <article className={`story-card stories__carousel-card${isFallback ? ' stories__carousel-card--fallback' : ''}`} data-aos={getCardAosAnimation(`story-${item.id}`)} key={item.id} aria-roledescription="slide" aria-label={`${carouselIndex + 1} of ${carouselStories.length}`}>
                       {isFallback && <small className="stories__fallback-label">The Cedar approach</small>}
@@ -870,8 +848,8 @@ function HomePage() {
           <div className="site-footer__bottom">
             <span>© {new Date().getFullYear()} Cedar Healthcare, LLC. All rights reserved.</span>
             <div>
-              <button type="button" onClick={() => setLegalModal('privacy')}>Privacy policy</button>
-              <button type="button" onClick={() => setLegalModal('terms')}>Terms of use</button>
+              <a href="/privacy">Privacy policy</a>
+              <a href="/terms">Terms of use</a>
             </div>
           </div>
         </div>
@@ -939,7 +917,7 @@ function HomePage() {
         <div className="modal-backdrop newsletter-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeNewsletterModal() }}>
           <section className="newsletter-modal" role="dialog" aria-modal="true" aria-labelledby="newsletter-modal-title">
             <button type="button" className="story-modal__close" aria-label="Close newsletter signup" onClick={closeNewsletterModal}><Icon name="close" /></button>
-            <span className="newsletter-modal__icon"><Icon name="leaf" size={24} /></span>
+            <span className="newsletter-modal__icon" aria-hidden="true">C</span>
             <p className="eyebrow"><span className="eyebrow__line" /> A little care in your inbox</p>
             <h2 id="newsletter-modal-title">Good things, growing.</h2>
             <p className="newsletter-modal__intro">Get thoughtful care tips and occasional updates from Cedar Healthcare. No noise, just a little something helpful.</p>
@@ -949,7 +927,7 @@ function HomePage() {
                 <input id="newsletter-modal-email" name="email" type="email" autoComplete="email" placeholder="Your email address" maxLength="254" required />
                 <button className="button button--green" type="submit">Subscribe</button>
               </div>
-              <p className="newsletter-form__note">Unsubscribe any time. See our <button type="button" onClick={() => setLegalModal('privacy')}>Privacy Policy</button>.</p>
+              <p className="newsletter-form__note">Unsubscribe any time. See our <a href="/privacy">Privacy Policy</a>.</p>
               <FormStatus status={newsletterStatus} />
               <input className="form-trap" type="text" name="website" tabIndex="-1" autoComplete="off" aria-hidden="true" />
             </form>
@@ -957,33 +935,6 @@ function HomePage() {
         </div>
       )}
 
-      {legalModal && (
-        <div className="modal-backdrop legal-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setLegalModal(null) }}>
-          <section className="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-modal-title">
-            <header className="legal-modal__header">
-              <div>
-                <p className="eyebrow"><span className="eyebrow__line" /> Cedar Healthcare, LLC</p>
-                <h2 id="legal-modal-title">{legalDocument.title}</h2>
-                <p className="legal-modal__updated">Last updated {legalDocument.updated}</p>
-              </div>
-              <button type="button" className="story-modal__close" aria-label={`Close ${legalDocument.title}`} onClick={() => setLegalModal(null)}><Icon name="close" /></button>
-            </header>
-            <div className="legal-modal__body">
-              <p className="legal-modal__introduction">{legalDocument.introduction}</p>
-              {legalDocument.sections.map((section) => (
-                <section className="legal-modal__section" key={section.title}>
-                  <h3>{section.title}</h3>
-                  {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-                </section>
-              ))}
-            </div>
-            <footer className="legal-modal__footer">
-              <span>Questions? <a href={`mailto:${emailAddress}`}>{emailAddress}</a></span>
-              <button type="button" className="button button--green" onClick={() => setLegalModal(null)}>Close</button>
-            </footer>
-          </section>
-        </div>
-      )}
     </>
   )
 }

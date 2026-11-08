@@ -1,4 +1,4 @@
-import { getResendConfig, getSupabaseConfig, renderBrandedEmail, renderNewsletterContent, sendJson } from './_shared.js'
+import { getPublicSiteUrl, getResendConfig, getSupabaseConfig, renderBrandedEmail, renderNewsletterContent, sendJson } from './_shared.js'
 
 const batchSize = 100
 
@@ -87,7 +87,7 @@ export default async function handler(req, res) {
       title: subject,
       intro: 'A thoughtful update from Cedar Healthcare.',
       content: `${renderNewsletterContent(message)}<p style="margin:24px 0 0;color:#718077;font-size:12px;line-height:1.6">To stop receiving Cedar updates, reply to this email and let us know.</p>`,
-      button: { url: 'https://cedarhealthcarehome.vercel.app', label: 'Visit Cedar Healthcare' },
+      button: { url: getPublicSiteUrl(), label: 'Visit Cedar Healthcare' },
     })
     const from = resend.RESEND_FROM_EMAIL
     if (action === 'test') {

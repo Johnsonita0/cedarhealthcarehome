@@ -255,7 +255,6 @@
 .admin-email-preview { width: min(100%, 680px); justify-self: center; overflow: hidden; border: 1px solid #e1e9e2; border-radius: 8px; background: #fff; box-shadow: 0 8px 26px rgba(32,53,41,.07); }
 .admin-email-preview > header { display: grid; justify-items: center; gap: 8px; padding: 22px 18px 17px; border-bottom: 1px solid #edf1ed; }
 .admin-email-preview > header img { width: 150px; height: auto; }
-.admin-email-preview > header strong { color: #07520b; font-size: 10px; letter-spacing: 1px; }
 .admin-email-preview__body { padding: 26px 30px 30px; }
 .admin-email-preview__body h2 { margin: 0 0 13px; color: #1b382b; font-size: 22px; font-weight: 600; }
 .admin-email-preview__intro { margin: 0 0 18px; color: #66766b; font-size: 12px; line-height: 1.7; }

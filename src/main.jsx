@@ -7,7 +7,10 @@ import './styles/main.css'
 import './styles/professional.css'
 
 const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
-const isAdminRoute = window.location.pathname.replace(/\/+$/, '') === '/admin'
+const LegalPage = lazy(() => import('./pages/LegalPage.jsx'))
+const currentPath = window.location.pathname.replace(/\/+$/, '')
+const isAdminRoute = currentPath === '/admin'
+const isLegalRoute = currentPath === '/privacy' || currentPath === '/terms'
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -29,7 +32,9 @@ function App() {
     <ToastProvider>
       {isAdminRoute
         ? <Suspense fallback={<SiteSplash />}><AdminPage /></Suspense>
-        : <HomePage />}
+        : isLegalRoute
+          ? <Suspense fallback={<SiteSplash />}><LegalPage /></Suspense>
+          : <HomePage />}
     </ToastProvider>
     </>
   )

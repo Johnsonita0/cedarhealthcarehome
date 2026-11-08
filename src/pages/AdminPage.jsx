@@ -6,6 +6,10 @@ import cedarLogo from '../images/logo/logo.jpeg'
 import { isCedarAdminUser, isSupabaseConfigured, supabase } from '../supabaseClient.js'
 import '../styles/admin.css'
 
+const publicSiteUrl = 'https://cedarhealthcarehome.org'
+const publicSiteShareUrl = encodeURIComponent(publicSiteUrl)
+const publicSiteShareMessage = encodeURIComponent(`Learn more about Cedar Healthcare: ${publicSiteUrl}`)
+
 const navigation = [
   { id: 'dashboard', label: 'Dashboard', icon: 'home' },
   { id: 'content', label: 'Page content', icon: 'leaf' },
@@ -546,7 +550,7 @@ function AdminPage() {
       detail: request.message || 'A new care request was submitted.',
       createdAt: request.created_at,
       destination: 'enquiries',
-      destinationLabel: 'Open enquiry',
+      destinationLabel: 'Open',
       targetId: request.id,
     })),
     ...data.submissions.map((submission) => ({
@@ -556,7 +560,7 @@ function AdminPage() {
       detail: submission.story || 'A new testimonial is ready for review.',
       createdAt: submission.created_at,
       destination: 'testimonials',
-      destinationLabel: 'Review testimonial',
+      destinationLabel: 'Open',
     })),
     ...data.subscribers.map((subscriber) => ({
       id: `subscriber:${subscriber.id}`,
@@ -565,7 +569,7 @@ function AdminPage() {
       detail: subscriber.email,
       createdAt: subscriber.created_at,
       destination: 'newsletter',
-      destinationLabel: 'Open audience',
+      destinationLabel: 'Open',
     })),
   ].sort((first, second) => new Date(second.createdAt) - new Date(first.createdAt))
     .map((notification) => ({ ...notification, read: readNotificationIds.has(notification.id) }))
@@ -995,16 +999,16 @@ function NewsletterTemplatePreview({ draft }) {
     <section className="admin-newsletter-preview-wrap">
       <div className="admin-published-manager__intro"><p className="admin-kicker">Live draft preview</p><h3>Email template</h3><p>This is how the newsletter will appear with Cedar branding.</p></div>
       <article className="admin-email-preview">
-        <header><img src={cedarLogo} alt="Cedar Healthcare" /><strong>CEDAR HEALTHCARE, LLC</strong></header>
+        <header><img src={cedarLogo} alt="Cedar Healthcare, LLC" /></header>
         <div className="admin-email-preview__body">
           <h2>{draft.subject || 'Your newsletter subject'}</h2>
           <p className="admin-email-preview__intro">A thoughtful update from Cedar Healthcare.</p>
           {draft.body.trim() ? lines.map(renderLine) : <p className="admin-email-preview__placeholder">Your newsletter message and images will appear here.</p>}
-          <a className="admin-email-preview__cta" href="https://cedarhealthcarehome.vercel.app">Visit Cedar Healthcare</a>
+          <a className="admin-email-preview__cta" href={publicSiteUrl}>Visit Cedar Healthcare</a>
         </div>
         <footer>
-          <nav aria-label="Email footer links"><a href="https://cedarhealthcarehome.vercel.app">Visit Cedar</a><a href="https://cedarhealthcarehome.vercel.app/#services">Our services</a><a href="https://cedarhealthcarehome.vercel.app/#stories">Stories</a><a href="https://cedarhealthcarehome.vercel.app/#contact">Request care</a></nav>
-          <div className="admin-email-preview__socials"><a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fcedarhealthcarehome.vercel.app" aria-label="Share Cedar on Facebook">f</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fcedarhealthcarehome.vercel.app" aria-label="Share Cedar on LinkedIn">in</a><a href="https://wa.me/?text=Learn%20more%20about%20Cedar%20Healthcare%3A%20https%3A%2F%2Fcedarhealthcarehome.vercel.app" aria-label="Share Cedar on WhatsApp">wa</a></div>
+          <nav aria-label="Email footer links"><a href={publicSiteUrl}>Visit Cedar</a><a href={`${publicSiteUrl}/#services`}>Our services</a><a href={`${publicSiteUrl}/#stories`}>Stories</a><a href={`${publicSiteUrl}/#contact`}>Request care</a><a href={`${publicSiteUrl}/privacy`}>Privacy policy</a><a href={`${publicSiteUrl}/terms`}>Terms of use</a></nav>
+          <div className="admin-email-preview__socials"><a href={`https://www.facebook.com/sharer/sharer.php?u=${publicSiteShareUrl}`} aria-label="Share Cedar on Facebook">f</a><a href={`https://www.linkedin.com/sharing/share-offsite/?url=${publicSiteShareUrl}`} aria-label="Share Cedar on LinkedIn">in</a><a href={`https://wa.me/?text=${publicSiteShareMessage}`} aria-label="Share Cedar on WhatsApp">wa</a></div>
           <small>Cedar Healthcare, LLC · 7412 N Western Ave, Chicago, IL 60645<br />224-204-3281 · cedarhealthcarehome@gmail.com</small>
         </footer>
       </article>
