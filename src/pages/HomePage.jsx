@@ -181,9 +181,13 @@ function HomePage() {
 
     const closeOnEscape = (event) => {
       if (event.key !== 'Escape') return
-      setNewsletterModalOpen(false)
-      setStoryOpen(false)
-      setLegalModal(null)
+      if (legalModal) {
+        setLegalModal(null)
+      } else if (storyOpen) {
+        setStoryOpen(false)
+      } else if (newsletterModalOpen) {
+        setNewsletterModalOpen(false)
+      }
     }
 
     const originalOverflow = document.body.style.overflow
@@ -605,7 +609,7 @@ function HomePage() {
                 <input id="newsletter-modal-email" name="email" type="email" autoComplete="email" placeholder="Your email address" maxLength="254" required />
                 <button className="button button--green" type="submit">Subscribe</button>
               </div>
-              <p className="newsletter-form__note">Unsubscribe any time. See our <button type="button" onClick={() => { closeNewsletterModal(); setLegalModal('privacy') }}>Privacy Policy</button>.</p>
+              <p className="newsletter-form__note">Unsubscribe any time. See our <button type="button" onClick={() => setLegalModal('privacy')}>Privacy Policy</button>.</p>
               <FormStatus status={newsletterStatus} />
               <input className="form-trap" type="text" name="website" tabIndex="-1" autoComplete="off" aria-hidden="true" />
             </form>
