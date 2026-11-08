@@ -72,6 +72,7 @@ function AdminPage() {
   const [dataLoading, setDataLoading] = useState(false)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [requestFilter, setRequestFilter] = useState('new')
   const [selectedRequestId, setSelectedRequestId] = useState(null)
   const [reviewFilter, setReviewFilter] = useState('pending')
@@ -177,6 +178,7 @@ function AdminPage() {
   }
 
   async function signOut() {
+    setProfileModalOpen(false)
     await supabase?.auth.signOut()
     setSession(null)
     setData(emptyData)
@@ -521,7 +523,7 @@ function AdminPage() {
       <main className="admin-main">
         <header className="admin-topbar">
           <div><p className="admin-kicker">Cedar Healthcare</p><h1>{activeView === 'dashboard' ? 'Dashboard' : viewLabel}</h1></div>
-          <div className="admin-topbar__user"><NetworkStatus /><span>{session.user.email?.slice(0, 1).toUpperCase()}</span><div><strong>{session.user.email}</strong><small>Administrator</small></div></div>
+          <div className="admin-topbar__user"><NetworkStatus /><button className="admin-profile-trigger" type="button" aria-label="Open account menu" aria-haspopup="dialog" onClick={() => setProfileModalOpen(true)}>{session.user.email?.slice(0, 1).toUpperCase()}</button><div><strong>{session.user.email}</strong><small>Administrator</small></div></div>
         </header>
 
         {notice && <div className="admin-notice" role="status"><span>{notice}</span><button type="button" aria-label="Dismiss message" onClick={() => setNotice('')}><Icon name="close" size={15} /></button></div>}
@@ -615,6 +617,16 @@ function AdminPage() {
           </button>
         ))}
       </nav>
+
+      {profileModalOpen && (
+        <div className="admin-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setProfileModalOpen(false) }}>
+          <section className="admin-modal admin-profile-modal" role="dialog" aria-modal="true" aria-labelledby="admin-profile-title">
+            <div className="admin-modal__heading"><div><p className="admin-kicker">Account</p><h2 id="admin-profile-title">Profile</h2></div><button type="button" aria-label="Close account menu" onClick={() => setProfileModalOpen(false)}><Icon name="close" size={20} /></button></div>
+            <div className="admin-profile-details"><span>{session.user.email?.slice(0, 1).toUpperCase()}</span><div><strong>{session.user.email}</strong><small>Administrator</small></div></div>
+            <div className="admin-modal__actions"><button className="admin-secondary-button" type="button" onClick={() => setProfileModalOpen(false)}>Close</button><button className="admin-danger-button" type="button" onClick={signOut}><Icon name="close" size={15} /> Sign out</button></div>
+          </section>
+        </div>
+      )}
 
       {editingReview && (
         <div className="admin-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setEditingReview(null) }}>
