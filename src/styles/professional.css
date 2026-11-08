@@ -76,6 +76,11 @@ body { color: var(--ink); background: #f7f9f5; }
 .hero__image-wrap img.hero__slide--brand { padding: 6% 5% 6% 48%; background: #f7f9f5; object-fit: contain; object-position: center right; }
 .hero__slide--active { z-index: 1; opacity: 1; transform: scale(1); }
 .hero__image-tag { z-index: 3; right: 24px; bottom: 22px; left: auto; font-size: 11px; text-shadow: 0 1px 6px rgba(0,0,0,.45); }
+.hero__slide-controls { position: absolute; z-index: 5; top: 17px; right: 17px; display: flex; align-items: center; gap: 2px; padding: 3px 4px; border-radius: 20px; background: rgba(13, 50, 24, .52); backdrop-filter: blur(8px); }
+.hero__slide-control { width: 24px; height: 24px; display: grid; flex: 0 0 24px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+.hero__slide-control::before { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.72); content: ''; }
+.hero__slide-control[aria-current="true"]::before { width: 10px; height: 10px; background: #f3d54b; box-shadow: 0 0 0 2px rgba(255,255,255,.48); }
+.hero__slide-control:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
 .hero__note { right: -15px; bottom: 10px; padding: 14px 18px; border: 1px solid #e8ede8; border-radius: 11px; box-shadow: 0 12px 35px rgba(32, 54, 41, .12); }
 .hero__note-icon { background: #e8f0eb; }
 .hero__note strong { color: #244b38; font: 600 14px 'DM Sans', sans-serif; }
@@ -300,6 +305,7 @@ body { color: var(--ink); background: #f7f9f5; }
   .hero__image-wrap--brand .hero__copy { right: 22px; bottom: 59px; left: 22px; width: auto; }
   .hero__image-wrap img.hero__slide--brand { padding: 8% 12% 52%; object-position: center top; }
   .hero__image-tag { right: 15px; bottom: 15px; left: 15px; width: fit-content; max-width: calc(100% - 30px); font-size: 9px; }
+  .hero__slide-controls { top: 12px; right: 12px; }
   .hero__note, .hero__sunburst { display: none; }
   .hero__foot { margin-top: 7px; padding-block: 13px; font-size: 8px; }
   .hero__foot a { font-size: 8px; }

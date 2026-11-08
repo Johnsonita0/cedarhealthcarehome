@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Icon, SiteSplash } from '../components/UI.jsx'
-import { NetworkStatus, useToast } from '../components/ToastProvider.jsx'
+import { useToast } from '../components/ToastProvider.jsx'
 import { defaultSiteContent } from '../data/adminDefaults.js'
 import cedarLogo from '../images/logo/logo.jpeg'
 import { isCedarAdminUser, isSupabaseConfigured, supabase } from '../supabaseClient.js'
@@ -28,6 +28,16 @@ const emptyData = {
   subscribers: [],
   campaigns: [],
   siteContent: null,
+}
+const readNotificationStorageKey = 'cedar-admin-read-notifications'
+
+function loadReadNotificationIds() {
+  try {
+    const storedIds = JSON.parse(window.localStorage.getItem(readNotificationStorageKey) || '[]')
+    return new Set(Array.isArray(storedIds) ? storedIds : [])
+  } catch {
+    return new Set()
+  }
 }
 
 function displayDate(value, options = { dateStyle: 'medium' }) {
@@ -75,6 +85,7 @@ function AdminPage() {
   const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [requestFilter, setRequestFilter] = useState('new')
   const [selectedRequestId, setSelectedRequestId] = useState(null)
+  const [readNotificationIds, setReadNotificationIds] = useState(loadReadNotificationIds)
   const [reviewFilter, setReviewFilter] = useState('pending')
   const [editingReview, setEditingReview] = useState(null)
   const [contentSection, setContentSection] = useState('hero')
@@ -90,6 +101,36 @@ function AdminPage() {
   function notify(message, type = 'success') {
     setNotice(message)
     showToast(message, type)
+  }
+
+  function saveReadNotificationIds(nextIds) {
+    setReadNotificationIds(nextIds)
+    try {
+      window.localStorage.setItem(readNotificationStorageKey, JSON.stringify([...nextIds]))
+    } catch {
+      return
+    }
+  }
+
+  function markNotificationRead(notificationId) {
+    if (readNotificationIds.has(notificationId)) return
+    const nextIds = new Set(readNotificationIds)
+    nextIds.add(notificationId)
+    saveReadNotificationIds(nextIds)
+  }
+
+  function markAllNotificationsRead(notificationIds) {
+    saveReadNotificationIds(new Set([...readNotificationIds, ...notificationIds]))
+  }
+
+  function openNotification(notification) {
+    markNotificationRead(notification.id)
+    if (notification.destination === 'enquiries') {
+      setRequestFilter('all')
+      setSelectedRequestId(notification.targetId)
+    }
+    if (notification.destination === 'testimonials') setReviewFilter('pending')
+    setActiveView(notification.destination)
   }
 
   useEffect(() => {
@@ -497,7 +538,39 @@ function AdminPage() {
   const publishedCount = data.testimonials.filter((item) => item.is_published).length
   const hiddenCount = data.testimonials.length - publishedCount
   const newRequestsCount = data.requests.filter((item) => item.status !== 'replied').length
-  const viewLabel = navigation.find((item) => item.id === activeView)?.label || 'Dashboard'
+  const notificationItems = [
+    ...data.requests.map((request) => ({
+      id: `request:${request.id}`,
+      category: 'Care request',
+      title: `Care request from ${request.full_name || 'a visitor'}`,
+      detail: request.message || 'A new care request was submitted.',
+      createdAt: request.created_at,
+      destination: 'enquiries',
+      destinationLabel: 'Open enquiry',
+      targetId: request.id,
+    })),
+    ...data.submissions.map((submission) => ({
+      id: `testimonial:${submission.id}`,
+      category: 'Testimonial',
+      title: `Testimonial from ${submission.name || 'a visitor'}`,
+      detail: submission.story || 'A new testimonial is ready for review.',
+      createdAt: submission.created_at,
+      destination: 'testimonials',
+      destinationLabel: 'Review testimonial',
+    })),
+    ...data.subscribers.map((subscriber) => ({
+      id: `subscriber:${subscriber.id}`,
+      category: 'Newsletter',
+      title: 'New newsletter subscriber',
+      detail: subscriber.email,
+      createdAt: subscriber.created_at,
+      destination: 'newsletter',
+      destinationLabel: 'Open audience',
+    })),
+  ].sort((first, second) => new Date(second.createdAt) - new Date(first.createdAt))
+    .map((notification) => ({ ...notification, read: readNotificationIds.has(notification.id) }))
+  const unreadNotificationCount = notificationItems.filter((notification) => !notification.read).length
+  const viewLabel = navigation.find((item) => item.id === activeView)?.label || (activeView === 'notifications' ? 'Notifications' : 'Dashboard')
 
   return (
     <div className="admin-app">
@@ -523,7 +596,14 @@ function AdminPage() {
       <main className="admin-main">
         <header className="admin-topbar">
           <div><p className="admin-kicker">Cedar Healthcare</p><h1>{activeView === 'dashboard' ? 'Dashboard' : viewLabel}</h1></div>
-          <div className="admin-topbar__user"><NetworkStatus /><button className="admin-profile-trigger" type="button" aria-label="Open CedarAdmin account menu" aria-haspopup="dialog" onClick={() => setProfileModalOpen(true)}>C</button><div><strong>CedarAdmin</strong><small>{session.user.email}</small></div></div>
+          <div className="admin-topbar__user">
+            <button className="admin-notification-button" type="button" aria-label={unreadNotificationCount ? `Notifications, ${unreadNotificationCount} unread` : 'Notifications'} aria-pressed={activeView === 'notifications'} title="Notifications" onClick={() => setActiveView((current) => current === 'notifications' ? 'dashboard' : 'notifications')}>
+              <Icon name="bell" size={19} />
+              {unreadNotificationCount > 0 && <span className="admin-notification-count">{unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}</span>}
+            </button>
+            <button className="admin-profile-trigger" type="button" aria-label="Open CedarAdmin account menu" aria-haspopup="dialog" onClick={() => setProfileModalOpen(true)}>C</button>
+            <div><strong>CedarAdmin</strong><small>{session.user.email}</small></div>
+          </div>
         </header>
 
         {notice && <div className="admin-notice" role="status"><span>{notice}</span><button type="button" aria-label="Dismiss message" onClick={() => setNotice('')}><Icon name="close" size={15} /></button></div>}
@@ -536,6 +616,16 @@ function AdminPage() {
             pendingCount={pendingCount}
             publishedCount={publishedCount}
             onNavigate={setActiveView}
+          />
+        )}
+        {activeView === 'notifications' && (
+          <NotificationsView
+            notifications={notificationItems}
+            unreadCount={unreadNotificationCount}
+            loading={dataLoading}
+            onMarkRead={markNotificationRead}
+            onMarkAllRead={() => markAllNotificationsRead(notificationItems.map((item) => item.id))}
+            onOpen={openNotification}
           />
         )}
         {activeView === 'content' && (
@@ -643,6 +733,52 @@ function AdminPage() {
         </div>
       )}
     </div>
+  )
+}
+
+function NotificationsView({ notifications, unreadCount, loading, onMarkRead, onMarkAllRead, onOpen }) {
+  const [filter, setFilter] = useState('all')
+  const visibleNotifications = filter === 'unread'
+    ? notifications.filter((notification) => !notification.read)
+    : notifications
+
+  return (
+    <section className="admin-workspace">
+      <div className="admin-page-heading">
+        <div><p className="admin-kicker">Admin activity</p><h2>Notifications</h2><p>Care requests, testimonials, and newsletter signups in one place.</p></div>
+        {unreadCount > 0 && <button className="admin-secondary-button" type="button" onClick={onMarkAllRead}>Mark all as read</button>}
+      </div>
+      <div className="admin-notification-toolbar">
+        <span>{notifications.length} total · {unreadCount} unread</span>
+        <div className="admin-segmented" aria-label="Notification filter">
+          <button type="button" className={filter === 'all' ? 'is-active' : ''} onClick={() => setFilter('all')}>All</button>
+          <button type="button" className={filter === 'unread' ? 'is-active' : ''} onClick={() => setFilter('unread')}>Unread</button>
+        </div>
+      </div>
+      {visibleNotifications.length ? (
+        <div className="admin-notification-list">
+          {visibleNotifications.map((notification) => (
+            <article className={`admin-notification-row${notification.read ? '' : ' is-unread'}`} key={notification.id}>
+              <div className="admin-notification-row__content">
+                <div className="admin-notification-row__meta"><span>{notification.category}</span><time dateTime={notification.createdAt}>{displayDate(notification.createdAt, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</time>{!notification.read && <span className="admin-notification-unread">Unread</span>}</div>
+                <h3>{notification.title}</h3>
+                <p>{notification.detail}</p>
+              </div>
+              <div className="admin-notification-row__actions">
+                {!notification.read && <button className="admin-secondary-button" type="button" onClick={() => onMarkRead(notification.id)}>Mark read</button>}
+                <button className="admin-primary-button" type="button" onClick={() => onOpen(notification)}>{notification.destinationLabel}</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="admin-empty-state">
+          <Icon name="bell" size={27} />
+          <h3>{loading ? 'Loading notifications' : filter === 'unread' ? 'You’re all caught up' : 'No notifications yet'}</h3>
+          <p>{loading ? 'New activity will appear here.' : filter === 'unread' ? 'There are no unread updates.' : 'New care requests and signups will appear here.'}</p>
+        </div>
+      )}
+    </section>
   )
 }
 

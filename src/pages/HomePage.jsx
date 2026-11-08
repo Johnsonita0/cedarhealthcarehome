@@ -51,7 +51,7 @@ async function fetchPublishedTestimonials() {
   return { testimonials: await response.json() }
 }
 
-const heroSlides = [
+const heroSlideCandidates = [
   {
     image: '/cedar-logo.jpeg',
     alt: 'Cedar Healthcare logo',
@@ -245,7 +245,35 @@ const heroSlides = [
     noteTitle: 'A conversation can help.',
     noteDescription: 'We are ready when you are.',
   },
+  {
+    image: 'https://images.pexels.com/photos/18459193/pexels-photo-18459193.jpeg?auto=compress&cs=tinysrgb&w=1400',
+    alt: 'A caregiver serving tea to an older woman at home',
+    position: '52% 38%',
+    mobilePosition: '52% 35%',
+    eyebrow: 'Thoughtful help in everyday moments',
+    title: <>A little help.<br />A lot more <em>comfort.</em></>,
+    description: 'Practical, personal support can make familiar routines feel easier and more reassuring.',
+    imageCaption: 'Small moments, thoughtful care',
+    noteTitle: 'A thoughtful touch.',
+    noteDescription: 'Everyday help at home.',
+  },
+  {
+    image: 'https://images.pexels.com/photos/7345476/pexels-photo-7345476.jpeg?auto=compress&cs=tinysrgb&w=1400',
+    alt: 'A healthcare worker checking an older man’s blood pressure at home',
+    position: '50% 40%',
+    mobilePosition: '52% 36%',
+    eyebrow: 'Professional care, human connection',
+    title: <>Skilled support.<br /><em>Personal attention.</em></>,
+    description: 'Health support delivered with patience, respect, and clear communication.',
+    imageCaption: 'Professional and personal',
+    noteTitle: 'Care you can count on.',
+    noteDescription: 'Skilled, compassionate support.',
+  },
 ]
+const heroSlides = heroSlideCandidates.reduce((uniqueSlides, slide) => {
+  if (!slide.brandSlide && !uniqueSlides.some((item) => item.image === slide.image)) uniqueSlides.push(slide)
+  return uniqueSlides
+}, [])
 const services = [
   {
     title: 'Personal care',
@@ -363,12 +391,12 @@ function HomePage() {
   }, [])
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => {
+    const timeoutId = window.setTimeout(() => {
       setActiveHeroSlide((currentSlide) => (currentSlide + 1) % heroSlides.length)
     }, 7000)
 
-    return () => window.clearInterval(intervalId)
-  }, [])
+    return () => window.clearTimeout(timeoutId)
+  }, [activeHeroSlide])
 
   useEffect(() => {
     const updateBackToTopVisibility = () => setShowBackToTop(window.scrollY > 400)
@@ -511,20 +539,22 @@ function HomePage() {
     ['FAQs', '#faq'],
     ['Contact', '#contact'],
   ]
-  const defaultHeroSlide = heroSlides[activeHeroSlide]
-  const heroSlide = siteContent?.hero && activeHeroSlide === 1
-    ? {
-        ...defaultHeroSlide,
-        image: siteContent.hero.image || defaultHeroSlide.image,
-        eyebrow: siteContent.hero.eyebrow || defaultHeroSlide.eyebrow,
-        title: siteContent.hero.headline || defaultHeroSlide.title,
-        description: siteContent.hero.introduction || defaultHeroSlide.description,
-        primaryLabel: siteContent.hero.primaryLabel,
-        primaryUrl: siteContent.hero.primaryUrl,
-        secondaryLabel: siteContent.hero.secondaryLabel,
-        secondaryUrl: siteContent.hero.secondaryUrl,
-      }
-    : defaultHeroSlide
+  const carouselSlides = heroSlides.map((slide, index) => {
+    if (index !== 0 || !siteContent?.hero) return slide
+    return {
+      ...slide,
+      image: siteContent.hero.image || slide.image,
+      imageCaption: siteContent.hero.eyebrow || slide.imageCaption,
+      eyebrow: siteContent.hero.eyebrow || slide.eyebrow,
+      title: siteContent.hero.headline || slide.title,
+      description: siteContent.hero.introduction || slide.description,
+      primaryLabel: siteContent.hero.primaryLabel || slide.primaryLabel,
+      primaryUrl: siteContent.hero.primaryUrl || slide.primaryUrl,
+      secondaryLabel: siteContent.hero.secondaryLabel || slide.secondaryLabel,
+      secondaryUrl: siteContent.hero.secondaryUrl || slide.secondaryUrl,
+    }
+  })
+  const heroSlide = carouselSlides[activeHeroSlide]
   const carouselStories = testimonials.length
     ? testimonials
     : storiesError ? [] : fallbackStorySlides
@@ -566,7 +596,7 @@ function HomePage() {
           <div className="container hero__grid">
             <div className="hero__visual">
               <div className={`hero__image-wrap${heroSlide.brandSlide ? ' hero__image-wrap--brand' : ''}`}>
-                {heroSlides.map((slide, index) => (
+                {carouselSlides.map((slide, index) => (
                   <img
                     className={`hero__slide${index === activeHeroSlide ? ' hero__slide--active' : ''}${slide.brandSlide ? ' hero__slide--brand' : ''}`}
                     key={`${slide.image}-${index}`}
@@ -576,7 +606,7 @@ function HomePage() {
                       '--hero-image-position': slide.position,
                       '--hero-image-position-mobile': slide.mobilePosition,
                     }}
-                    fetchPriority={index === 0 ? 'high' : 'auto'}
+                    fetchPriority={index === activeHeroSlide ? 'high' : 'auto'}
                     aria-hidden={index !== activeHeroSlide}
                   />
                 ))}
@@ -594,6 +624,18 @@ function HomePage() {
                   </div>
                 </div>
                 <span className="hero__image-tag"><Icon name="spark" size={17} /> {heroSlide.imageCaption}</span>
+                <div className="hero__slide-controls" role="group" aria-label="Hero slides">
+                  {carouselSlides.map((slide, index) => (
+                    <button
+                      className="hero__slide-control"
+                      type="button"
+                      key={`${slide.image}-${index}`}
+                      aria-label={`Show slide ${index + 1}: ${slide.imageCaption}`}
+                      aria-current={index === activeHeroSlide ? 'true' : undefined}
+                      onClick={() => setActiveHeroSlide(index)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
