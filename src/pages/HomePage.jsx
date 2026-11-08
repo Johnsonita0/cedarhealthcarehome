@@ -158,24 +158,23 @@ function HomePage() {
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      setActiveHeroSlide((currentSlide) => (currentSlide + 1) % heroSlides.length)
+      setActiveHeroSlide((currentSlide) => (
+        (currentSlide + 1 + Math.floor(Math.random() * (heroSlides.length - 1))) % heroSlides.length
+      ))
     }, 6000)
 
     return () => window.clearInterval(intervalId)
   }, [])
 
   useEffect(() => {
-    if (newsletterModalOpen || storyOpen || legalModal || newsletterStatus?.type === 'success') return undefined
     if (window.localStorage.getItem('cedar-newsletter-subscribed') === 'true') return undefined
-    if (window.sessionStorage.getItem('cedar-newsletter-modal-seen') === 'true') return undefined
 
     const timeoutId = window.setTimeout(() => {
-      window.sessionStorage.setItem('cedar-newsletter-modal-seen', 'true')
       setNewsletterModalOpen(true)
     }, 6000)
 
     return () => window.clearTimeout(timeoutId)
-  }, [newsletterModalOpen, storyOpen, legalModal, newsletterStatus?.type])
+  }, [])
 
   useEffect(() => {
     if (!newsletterModalOpen && !storyOpen && !legalModal) return undefined
@@ -236,7 +235,6 @@ function HomePage() {
       if (!response.ok) throw new Error(result.error || 'We could not complete your subscription.')
       form.reset()
       window.localStorage.setItem('cedar-newsletter-subscribed', 'true')
-      window.sessionStorage.setItem('cedar-newsletter-modal-seen', 'true')
       setNewsletterStatus({
         type: result.emailSent ? 'success' : 'notice',
         message: result.emailSent
@@ -285,7 +283,6 @@ function HomePage() {
   const legalDocument = legalModal === 'privacy' ? privacyPolicy : termsOfUse
 
   function closeNewsletterModal() {
-    window.sessionStorage.setItem('cedar-newsletter-modal-seen', 'true')
     setNewsletterModalOpen(false)
   }
 
