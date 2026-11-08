@@ -1,9 +1,9 @@
-const cacheName = 'cedar-offline-v1'
+const cacheName = 'cedar-offline-v2'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(cacheName)
-      .then((cache) => cache.add('/offline.html'))
+      .then((cache) => cache.addAll(['/offline.html', '/cedar-logo.jpeg']))
       .then(() => self.skipWaiting()),
   )
 })
@@ -18,11 +18,15 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event
-  if (request.method !== 'GET' || request.mode !== 'navigate') return
+  const isOfflineLogo = new URL(request.url).pathname === '/cedar-logo.jpeg'
+  if (request.method !== 'GET' || (request.mode !== 'navigate' && !isOfflineLogo)) return
 
   event.respondWith(
     fetch(request).catch(async () => {
       const cache = await caches.open(cacheName)
+      const cachedResponse = await cache.match(request)
+      if (cachedResponse) return cachedResponse
+      if (request.mode !== 'navigate') return Response.error()
       return (await cache.match('/offline.html')) || new Response('You are offline.', {
         status: 503,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
