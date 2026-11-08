@@ -34,6 +34,15 @@ button { color: inherit; }
 img { display: block; max-width: 100%; }
 ::selection { color: var(--green-dark); background: #e7d994; }
 
+.site-splash { position: fixed; z-index: 10000; inset: 0; display: grid; align-content: center; justify-items: center; gap: 30px; padding: 24px; background: var(--cream); }
+.site-splash__logo { width: min(230px, 70vw); max-height: 80px; object-fit: contain; }
+.site-splash__progress { width: min(220px, 62vw); height: 4px; overflow: hidden; border-radius: 999px; background: var(--sage); }
+.site-splash__progress-fill { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--gold); }
+.site-splash--timed .site-splash__progress-fill { animation: site-splash-progress 6s linear forwards; }
+.site-splash__progress-fill--indeterminate { width: 32%; animation: site-splash-indeterminate 1.3s ease-in-out infinite alternate; }
+@keyframes site-splash-progress { to { width: 100%; } }
+@keyframes site-splash-indeterminate { from { transform: translateX(-20%); } to { transform: translateX(220%); } }
+
 .container { width: min(1160px, calc(100% - 64px)); margin-inline: auto; }
 .section-pad { padding-block: 112px; }
 main section[id] { scroll-margin-top: var(--sticky-header-offset); }
@@ -332,4 +341,5 @@ a.contact-card:hover { background: rgba(255, 255, 255, .07); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  .site-splash--timed .site-splash__progress-fill { animation-duration: 6s !important; }
 }

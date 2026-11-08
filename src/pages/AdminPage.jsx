@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Icon } from '../components/UI.jsx'
+import { Icon, SiteSplash } from '../components/UI.jsx'
 import { NetworkStatus, useToast } from '../components/ToastProvider.jsx'
 import { defaultSiteContent } from '../data/adminDefaults.js'
 import cedarLogo from '../images/logo/logo.jpeg'
@@ -466,7 +466,7 @@ function AdminPage() {
     setBusy(false)
   }
 
-  if (authLoading) return <div className="admin-loading">Loading Cedar Admin…</div>
+  if (authLoading) return <SiteSplash />
   if (!session) {
     return (
       <main className="admin-login-shell">

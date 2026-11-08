@@ -9,6 +9,7 @@ import { useToast } from '../components/ToastProvider.jsx'
 const phoneNumber = '224-204-3281'
 const phoneLink = 'tel:+12242043281'
 const emailAddress = 'cedarhealthcarehome@gmail.com'
+const whatsappContactUrl = `https://wa.me/12242043281?text=${encodeURIComponent('Hello Cedar Healthcare, I would like to learn more about your home care services.')}`
 const cardAosAnimations = ['fade-up', 'zoom-in', 'fade-down']
 const cardAosByKey = new Map()
 const fallbackStorySlides = [
@@ -381,7 +382,7 @@ function HomePage() {
 
     const timeoutId = window.setTimeout(() => {
       setNewsletterModalOpen(true)
-    }, 6000)
+    }, 12000)
 
     return () => window.clearTimeout(timeoutId)
   }, [])
@@ -554,7 +555,7 @@ function HomePage() {
           </nav>
           <div className="site-header__actions">
             <a className="header-phone" href={phoneLink}><Icon name="phone" size={16} /> <span>{phoneNumber}</span></a>
-            <a className="header-whatsapp" href="https://wa.me/12242043281" target="_blank" rel="noreferrer" aria-label="Chat with Cedar Healthcare on WhatsApp"><Icon name="whatsapp" size={19} /><span>WhatsApp</span></a>
+            <a className="header-whatsapp" href={whatsappContactUrl} target="_blank" rel="noreferrer" aria-label="Chat with Cedar Healthcare on WhatsApp"><Icon name="whatsapp" size={19} /><span>WhatsApp</span></a>
             <PortalLink className="button button--small button--green header-app-link" compact />
           </div>
         </div>
@@ -718,7 +719,7 @@ function HomePage() {
             </div>
             <div className="faq__list">
               {pageFaqs.map((faq, index) => (
-                <details className="faq-item" data-aos={getCardAosAnimation(`faq-${faq.question}`)} key={faq.question} open={index === 0}>
+                <details className="faq-item" data-aos={getCardAosAnimation(`faq-${faq.question}`)} key={faq.question} name="cedar-faq" open={index === 0}>
                   <summary><span>{faq.question}</span><span className="faq-item__toggle" aria-hidden="true" /></summary>
                   <p>{faq.answer}</p>
                 </details>
@@ -739,6 +740,11 @@ function HomePage() {
                 <a className="contact-card" data-aos={getCardAosAnimation('contact-phone')} href={phoneLink}>
                   <span className="contact-card__icon"><Icon name="phone" size={20} /></span>
                   <span><small>We’re here to talk</small><strong>{phoneNumber}</strong></span>
+                  <Icon name="arrow" size={16} className="contact-card__arrow" />
+                </a>
+                <a className="contact-card" data-aos={getCardAosAnimation('contact-whatsapp')} href={whatsappContactUrl} target="_blank" rel="noreferrer">
+                  <span className="contact-card__icon"><Icon name="whatsapp" size={20} /></span>
+                  <span><small>Message us on WhatsApp</small><strong>{phoneNumber}</strong></span>
                   <Icon name="arrow" size={16} className="contact-card__arrow" />
                 </a>
                 <a className="contact-card" data-aos={getCardAosAnimation('contact-email')} href={`mailto:${emailAddress}`}>
@@ -837,7 +843,7 @@ function HomePage() {
 
       <a
         className="desktop-whatsapp-float"
-        href="https://wa.me/12242043281"
+        href={whatsappContactUrl}
         target="_blank"
         rel="noreferrer"
         aria-label="Chat with Cedar Healthcare on WhatsApp"

@@ -1,7 +1,8 @@
-import React, { lazy, Suspense } from 'react'
+import React, { lazy, Suspense, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import HomePage from './pages/HomePage.jsx'
 import { ToastProvider } from './components/ToastProvider.jsx'
+import { SiteSplash } from './components/UI.jsx'
 import './styles/main.css'
 import './styles/professional.css'
 
@@ -14,12 +15,28 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   })
 }
 
-createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+function App() {
+  const [showSplash, setShowSplash] = useState(true)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowSplash(false), 6000)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  return (
+    <>
+      {showSplash && <SiteSplash timed />}
     <ToastProvider>
       {isAdminRoute
-        ? <Suspense fallback={<div className="admin-loading">Loading Cedar Admin…</div>}><AdminPage /></Suspense>
+        ? <Suspense fallback={<SiteSplash />}><AdminPage /></Suspense>
         : <HomePage />}
     </ToastProvider>
+    </>
+  )
+}
+
+createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
   </React.StrictMode>,
 )

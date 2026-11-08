@@ -52,6 +52,20 @@ export function Brand({ light = false }) {
   )
 }
 
+export function SiteSplash({ timed = false }) {
+  const progressClass = timed ? '' : ' site-splash__progress-fill--indeterminate'
+
+  return (
+    <div className={`site-splash${timed ? ' site-splash--timed' : ''}`} role="status" aria-live="polite">
+      <img className="site-splash__logo" src="/cedar-logo.jpeg" alt="Cedar Healthcare" />
+      <div className="site-splash__progress" aria-hidden="true">
+        <span className={`site-splash__progress-fill${progressClass}`} />
+      </div>
+      <span className="sr-only">Loading Cedar Healthcare</span>
+    </div>
+  )
+}
+
 export function PortalLink({ className = 'button button--outline', compact = false, label = 'Open App', url = '' }) {
   const [notice, setNotice] = useState(false)
   const buttonLabel = notice ? (compact ? 'Coming soon' : 'Client app coming soon') : label
