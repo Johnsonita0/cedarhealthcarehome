@@ -366,6 +366,15 @@ body { color: var(--ink); background: #f7f9f5; }
   .contact__hours { grid-column: auto; }
 }
 
+@media (max-width: 760px) and (max-height: 600px) {
+  .hero__visual { height: max(230px, min(390px, calc(100svh - 185px))); min-height: 0; }
+  .hero__copy, .hero__image-wrap--brand .hero__copy { bottom: 20px; }
+  .hero__copy .eyebrow { margin-bottom: 8px; }
+  .hero h1 { font-size: clamp(31px, 7vw, 40px); line-height: 1; }
+  .hero__intro { margin: 8px 0 11px; font-size: 10px; line-height: 1.45; }
+  .hero__actions .button { min-height: 36px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
   .desktop-whatsapp-float { animation: none; }

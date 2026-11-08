@@ -568,7 +568,7 @@ function HomePage() {
                 {heroSlides.map((slide, index) => (
                   <img
                     className={`hero__slide${index === activeHeroSlide ? ' hero__slide--active' : ''}${slide.brandSlide ? ' hero__slide--brand' : ''}`}
-                    key={slide.image}
+                    key={`${slide.image}-${index}`}
                     src={slide.image}
                     alt={slide.alt}
                     style={{
