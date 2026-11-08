@@ -10,7 +10,7 @@ export function Icon({ name, size = 22, className = '' }) {
     viewBox: '0 0 24 24',
     fill: 'none',
     stroke: 'currentColor',
-    strokeWidth: 1.7,
+    strokeWidth: name === 'cedar' ? 2.1 : 1.7,
     strokeLinecap: 'round',
     strokeLinejoin: 'round',
     'aria-hidden': true,
@@ -20,6 +20,7 @@ export function Icon({ name, size = 22, className = '' }) {
   const paths = {
     arrow: <><path d="M4.5 12h14" /><path d="m13 5.5 6.5 6.5-6.5 6.5" /></>,
     'arrow-up': <><path d="M12 19V5" /><path d="m5.5 11.5 6.5-6.5 6.5 6.5" /></>,
+    cedar: <><path d="M19 6a9 9 0 1 0 0 12" /><circle cx="18.5" cy="5.5" r="1.8" fill="currentColor" stroke="none" /></>,
     care: <><path d="M12 21s-7.5-4.6-7.5-11a4.25 4.25 0 0 1 7.5-2.7 4.25 4.25 0 0 1 7.5 2.7c0 6.4-7.5 11-7.5 11Z" /><path d="M8.8 12h6.4M12 8.8v6.4" /></>,
     health: <><path d="M12 21s-7.5-4.6-7.5-11a4.25 4.25 0 0 1 7.5-2.7 4.25 4.25 0 0 1 7.5 2.7c0 6.4-7.5 11-7.5 11Z" /><path d="M8.7 12h6.6M12 8.7v6.6" /></>,
     heart: <><path d="M12 21s-7.5-4.6-7.5-11a4.25 4.25 0 0 1 7.5-2.7 4.25 4.25 0 0 1 7.5 2.7c0 6.4-7.5 11-7.5 11Z" /><path d="M8.5 12h7" /></>,

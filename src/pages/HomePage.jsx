@@ -1,10 +1,22 @@
 import { useEffect, useState } from 'react'
+import AOS from 'aos'
+import 'aos/dist/aos.css'
 import { Brand, FormStatus, Icon, PortalLink } from '../components/UI.jsx'
 import { privacyPolicy, termsOfUse } from '../data/legalContent.js'
 
 const phoneNumber = '224-204-3281'
 const phoneLink = 'tel:+12242043281'
 const emailAddress = 'cedarhealthcarehome@gmail.com'
+const cardAosAnimations = ['fade-up', 'fade-left', 'zoom-in', 'fade-right']
+const cardAosByKey = new Map()
+
+function getCardAosAnimation(key) {
+  if (!cardAosByKey.has(key)) {
+    cardAosByKey.set(key, cardAosAnimations[Math.floor(Math.random() * cardAosAnimations.length)])
+  }
+  return cardAosByKey.get(key)
+}
+
 const heroSlides = [
   {
     image: 'https://images.pexels.com/photos/29372733/pexels-photo-29372733.jpeg?auto=compress&cs=tinysrgb&w=1600',
@@ -140,6 +152,35 @@ function HomePage() {
   const [testimonials, setTestimonials] = useState([])
   const [storiesError, setStoriesError] = useState(false)
   const [showBackToTop, setShowBackToTop] = useState(false)
+
+  useEffect(() => {
+    const root = document.documentElement
+    let initialized = false
+    if (
+      typeof window.matchMedia !== 'function'
+      || typeof window.IntersectionObserver !== 'function'
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) return undefined
+
+    try {
+      AOS.init({ duration: 750, easing: 'ease-out-cubic', once: true, offset: 70 })
+      root.classList.add('aos-ready')
+      initialized = true
+    } catch (error) {
+      console.error('Scroll animations could not be initialized.', error)
+      root.classList.remove('aos-ready')
+    }
+
+    return () => {
+      if (!initialized) return
+      root.classList.remove('aos-ready')
+      AOS.refreshHard()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (document.documentElement.classList.contains('aos-ready')) AOS.refreshHard()
+  }, [testimonials])
 
   useEffect(() => {
     let active = true
@@ -361,7 +402,7 @@ function HomePage() {
             </div>
             <div className="services__grid">
               {services.map((service) => (
-                <article className="service-card" key={service.title}>
+                <article className="service-card" data-aos={getCardAosAnimation(`service-${service.title}`)} key={service.title}>
                   <div className="service-card__top">
                     <span className="service-card__icon"><Icon name={service.icon} size={23} /></span>
                   </div>
@@ -387,12 +428,12 @@ function HomePage() {
               <span className="about__leaf" aria-hidden="true"><Icon name="leaf" size={100} /></span>
             </div>
             <div className="about__values">
-              <article className="value-card">
+              <article className="value-card" data-aos={getCardAosAnimation('mission-card')}>
                 <span className="value-card__label">Our mission</span>
                 <h3>Care with purpose.</h3>
                 <p>To deliver exceptional home care services that promote dignity, independence, and better health for every individual we serve.</p>
               </article>
-              <article className="value-card value-card--sage">
+              <article className="value-card value-card--sage" data-aos={getCardAosAnimation('vision-card')}>
                 <span className="value-card__label">Our vision</span>
                 <h3>A brighter kind of care.</h3>
                 <p>To be a trusted leader in home care, known for our compassion, integrity, and commitment to enriching lives in our communities.</p>
@@ -414,7 +455,7 @@ function HomePage() {
             {testimonials.length > 0 ? (
               <div className="stories__grid">
                 {testimonials.map((item) => (
-                  <article className="story-card" key={item.id}>
+                  <article className="story-card" data-aos={getCardAosAnimation(`story-${item.id}`)} key={item.id}>
                     <Icon name="quote" size={23} className="story-card__quote" />
                     <p className="story-card__text">{item.story}</p>
                     <div className="story-card__author">
@@ -448,7 +489,7 @@ function HomePage() {
             </div>
             <div className="faq__list">
               {faqs.map((faq, index) => (
-                <details className="faq-item" key={faq.question} open={index === 0}>
+                <details className="faq-item" data-aos={getCardAosAnimation(`faq-${faq.question}`)} key={faq.question} open={index === 0}>
                   <summary><span>{faq.question}</span><span className="faq-item__toggle" aria-hidden="true" /></summary>
                   <p>{faq.answer}</p>
                 </details>
@@ -466,17 +507,17 @@ function HomePage() {
             </div>
             <div className="contact__grid">
               <div className="contact__details">
-                <a className="contact-card" href={phoneLink}>
+                <a className="contact-card" data-aos={getCardAosAnimation('contact-phone')} href={phoneLink}>
                   <span className="contact-card__icon"><Icon name="phone" size={20} /></span>
                   <span><small>We’re here to talk</small><strong>{phoneNumber}</strong></span>
                   <Icon name="arrow" size={16} className="contact-card__arrow" />
                 </a>
-                <a className="contact-card" href={`mailto:${emailAddress}`}>
+                <a className="contact-card" data-aos={getCardAosAnimation('contact-email')} href={`mailto:${emailAddress}`}>
                   <span className="contact-card__icon"><Icon name="mail" size={20} /></span>
                   <span><small>Send us a note</small><strong>{emailAddress}</strong></span>
                   <Icon name="arrow" size={16} className="contact-card__arrow" />
                 </a>
-                <div className="contact-card contact-card--address">
+                <div className="contact-card contact-card--address" data-aos={getCardAosAnimation('contact-address')}>
                   <span className="contact-card__icon"><Icon name="pin" size={20} /></span>
                   <span><small>Come say hello</small><strong>7412 N Western Ave<br />Chicago, IL 60645</strong></span>
                 </div>
@@ -560,7 +601,7 @@ function HomePage() {
       </footer>
 
       <nav className="mobile-nav" aria-label="Quick navigation">
-        {[['Home', '#home', 'leaf'], ['Services', '#services', 'health'], ['Stories', '#stories', 'quote'], ['FAQ', '#faq', 'spark'], ['Contact', '#contact', 'mail']].map(([label, href, icon]) => (
+        {[['Home', '#home', 'cedar'], ['Services', '#services', 'health'], ['Stories', '#stories', 'quote'], ['FAQ', '#faq', 'spark'], ['Contact', '#contact', 'mail']].map(([label, href, icon]) => (
           <a href={href} key={label}><Icon name={icon} size={19} /><span>{label}</span></a>
         ))}
       </nav>
