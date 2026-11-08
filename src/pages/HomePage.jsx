@@ -52,6 +52,19 @@ async function fetchPublishedTestimonials() {
 
 const heroSlides = [
   {
+    image: '/cedar-logo.jpeg',
+    alt: 'Cedar Healthcare logo',
+    position: 'center',
+    mobilePosition: 'center',
+    brandSlide: true,
+    eyebrow: 'Cedar Healthcare',
+    title: <>Thoughtful care,<br />right at <em>home.</em></>,
+    description: 'Personalized support that helps make home a more comfortable place to live, heal, and stay connected.',
+    imageCaption: 'Cedar Healthcare, LLC',
+    noteTitle: 'Care that feels like home.',
+    noteDescription: 'Here when it matters.',
+  },
+  {
     image: 'https://images.pexels.com/photos/6129106/pexels-photo-6129106.jpeg?auto=compress&cs=tinysrgb&w=1600',
     alt: 'A clinician speaking with a client while holding a clipboard',
     position: '58% 30%',
@@ -98,6 +111,138 @@ const heroSlides = [
     imageCaption: 'A caring team by your side',
     noteTitle: 'People who listen.',
     noteDescription: 'Your needs come first.',
+  },
+  {
+    image: 'https://images.pexels.com/photos/6129242/pexels-photo-6129242.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A caregiver comforting a client at home',
+    position: '48% 42%',
+    mobilePosition: '38% 36%',
+    eyebrow: 'Personal care, your way',
+    title: <>Support that<br />respects <em>your pace.</em></>,
+    description: 'From morning routines to winding down, care should fit the way you want to live.',
+    imageCaption: 'Care that fits your day',
+    noteTitle: 'Your routine, your way.',
+    noteDescription: 'Support that feels comfortable.',
+  },
+  {
+    image: 'https://images.pexels.com/photos/6129106/pexels-photo-6129106.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A clinician speaking with a client while holding a clipboard',
+    position: '48% 38%',
+    mobilePosition: '55% 30%',
+    eyebrow: 'Care starts with listening',
+    title: <>Your needs<br />come <em>first.</em></>,
+    description: 'We take time to understand what matters to you and your family before care begins.',
+    imageCaption: 'A conversation that matters',
+    noteTitle: 'We listen first.',
+    noteDescription: 'Care shaped around you.',
+  },
+  {
+    image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A caregiver sharing a reassuring moment with an older adult',
+    position: '47% 42%',
+    mobilePosition: '58% 34%',
+    eyebrow: 'Here through every season',
+    title: <>Steady support<br />for <em>changing needs.</em></>,
+    description: 'When health needs change, a familiar and dependable care team can make each day feel more manageable.',
+    imageCaption: 'Steady support, day by day',
+    noteTitle: 'A team by your side.',
+    noteDescription: 'Through every change.',
+  },
+  {
+    image: 'https://images.pexels.com/photos/7446778/pexels-photo-7446778.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A care professional speaking with clients around a table',
+    position: '52% 43%',
+    mobilePosition: '56% 37%',
+    eyebrow: 'A little room to breathe',
+    title: <>More support<br />for the <em>whole family.</em></>,
+    description: 'Thoughtful help at home can give loved ones more time to connect and less to manage alone.',
+    imageCaption: 'Support for everyone',
+    noteTitle: 'You are not alone.',
+    noteDescription: 'We are here to help.',
+  },
+  {
+    image: 'https://images.pexels.com/photos/6129106/pexels-photo-6129106.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A clinician speaking with a client while holding a clipboard',
+    position: '62% 34%',
+    mobilePosition: '64% 30%',
+    eyebrow: 'A plan made for you',
+    title: <>Care that sees<br /><em>the whole person.</em></>,
+    description: 'Your preferences, routines, and goals all belong in a care plan that feels personal.',
+    imageCaption: 'Care made personal',
+    noteTitle: 'Every detail matters.',
+    noteDescription: 'Your voice shapes the plan.',
+  },
+  {
+    image: 'https://images.pexels.com/photos/6129242/pexels-photo-6129242.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A caregiver comforting a client at home',
+    position: '62% 39%',
+    mobilePosition: '28% 34%',
+    eyebrow: 'Comfort in familiar places',
+    title: <>Feel more at ease<br />right <em>where you are.</em></>,
+    description: 'Home can remain a place of comfort with practical, compassionate support close by.',
+    imageCaption: 'Comfort at home',
+    noteTitle: 'Familiar feels good.',
+    noteDescription: 'Care close to home.',
+  },
+  {
+    image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A caregiver sharing a reassuring moment with an older adult',
+    position: '42% 42%',
+    mobilePosition: '48% 38%',
+    eyebrow: 'Companionship that connects',
+    title: <>Good company.<br /><em>Brighter days.</em></>,
+    description: 'Meaningful conversation and a reassuring presence can make ordinary moments feel special.',
+    imageCaption: 'A caring presence',
+    noteTitle: 'Connection matters.',
+    noteDescription: 'A friendly face each day.',
+  },
+  {
+    image: 'https://images.pexels.com/photos/7446778/pexels-photo-7446778.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A care professional speaking with clients around a table',
+    position: '43% 40%',
+    mobilePosition: '46% 34%',
+    eyebrow: 'Practical help, thoughtful care',
+    title: <>A little help<br />with <em>everyday life.</em></>,
+    description: 'From meals to light household tasks, everyday assistance can help home feel easier.',
+    imageCaption: 'Help with the everyday',
+    noteTitle: 'The little things count.',
+    noteDescription: 'Everyday help at home.',
+  },
+  {
+    image: 'https://images.pexels.com/photos/6129106/pexels-photo-6129106.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A clinician speaking with a client while holding a clipboard',
+    position: '54% 44%',
+    mobilePosition: '49% 38%',
+    eyebrow: 'Professional care, human connection',
+    title: <>Skilled support.<br /><em>Personal attention.</em></>,
+    description: 'Professional health support works best when it comes with patience, respect, and clear communication.',
+    imageCaption: 'Professional and personal',
+    noteTitle: 'Care you can count on.',
+    noteDescription: 'Skilled, compassionate support.',
+  },
+  {
+    image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A caregiver sharing a reassuring moment with an older adult',
+    position: '56% 32%',
+    mobilePosition: '58% 32%',
+    eyebrow: 'A team that follows through',
+    title: <>Thoughtful care.<br /><em>Peace of mind.</em></>,
+    description: 'We listen, communicate, and show up with steady support for the people who matter most.',
+    imageCaption: 'A team you can trust',
+    noteTitle: 'Here when it matters.',
+    noteDescription: 'A little more peace of mind.',
+  },
+  {
+    image: 'https://images.pexels.com/photos/7446778/pexels-photo-7446778.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A care professional speaking with clients around a table',
+    position: '58% 34%',
+    mobilePosition: '52% 42%',
+    eyebrow: 'Start with a conversation',
+    title: <>Let’s find care<br />that feels <em>right.</em></>,
+    description: 'Tell us what would help. We are ready to listen and talk through the next step together.',
+    imageCaption: 'Let’s talk about care',
+    noteTitle: 'A conversation can help.',
+    noteDescription: 'We are ready when you are.',
   },
 ]
 const services = [
@@ -221,7 +366,7 @@ function HomePage() {
       setActiveHeroSlide((currentSlide) => (
         (currentSlide + 1 + Math.floor(Math.random() * (heroSlides.length - 1))) % heroSlides.length
       ))
-    }, 6000)
+    }, 7000)
 
     return () => window.clearInterval(intervalId)
   }, [])
@@ -368,7 +513,7 @@ function HomePage() {
     ['Contact', '#contact'],
   ]
   const defaultHeroSlide = heroSlides[activeHeroSlide]
-  const heroSlide = siteContent?.hero && activeHeroSlide === 0
+  const heroSlide = siteContent?.hero && activeHeroSlide === 1
     ? {
         ...defaultHeroSlide,
         image: siteContent.hero.image || defaultHeroSlide.image,
@@ -421,10 +566,10 @@ function HomePage() {
         <section className="hero" id="home">
           <div className="container hero__grid">
             <div className="hero__visual">
-              <div className="hero__image-wrap">
+              <div className={`hero__image-wrap${heroSlide.brandSlide ? ' hero__image-wrap--brand' : ''}`}>
                 {heroSlides.map((slide, index) => (
                   <img
-                    className={`hero__slide${index === activeHeroSlide ? ' hero__slide--active' : ''}`}
+                    className={`hero__slide${index === activeHeroSlide ? ' hero__slide--active' : ''}${slide.brandSlide ? ' hero__slide--brand' : ''}`}
                     key={slide.image}
                     src={slide.image}
                     alt={slide.alt}
