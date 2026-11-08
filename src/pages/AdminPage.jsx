@@ -1004,7 +1004,7 @@ function NewsletterTemplatePreview({ draft }) {
         </div>
         <footer>
           <nav aria-label="Email footer links"><a href="https://cedarhealthcarehome.vercel.app">Visit Cedar</a><a href="https://cedarhealthcarehome.vercel.app/#services">Our services</a><a href="https://cedarhealthcarehome.vercel.app/#stories">Stories</a><a href="https://cedarhealthcarehome.vercel.app/#contact">Request care</a></nav>
-          <div className="admin-email-preview__socials"><a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fcedarhealthcarehome.vercel.app" aria-label="Share Cedar on Facebook">f</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fcedarhealthcarehome.vercel.app" aria-label="Share Cedar on LinkedIn">in</a><a href="https://wa.me/?text=Learn%20more%20about%20Cedar%20Healthcare" aria-label="Share Cedar on WhatsApp">wa</a></div>
+          <div className="admin-email-preview__socials"><a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fcedarhealthcarehome.vercel.app" aria-label="Share Cedar on Facebook">f</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fcedarhealthcarehome.vercel.app" aria-label="Share Cedar on LinkedIn">in</a><a href="https://wa.me/?text=Learn%20more%20about%20Cedar%20Healthcare%3A%20https%3A%2F%2Fcedarhealthcarehome.vercel.app" aria-label="Share Cedar on WhatsApp">wa</a></div>
           <small>Cedar Healthcare, LLC · 7412 N Western Ave, Chicago, IL 60645<br />224-204-3281 · cedarhealthcarehome@gmail.com</small>
         </footer>
       </article>
