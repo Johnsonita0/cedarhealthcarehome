@@ -523,7 +523,7 @@ function AdminPage() {
       <main className="admin-main">
         <header className="admin-topbar">
           <div><p className="admin-kicker">Cedar Healthcare</p><h1>{activeView === 'dashboard' ? 'Dashboard' : viewLabel}</h1></div>
-          <div className="admin-topbar__user"><NetworkStatus /><button className="admin-profile-trigger" type="button" aria-label="Open account menu" aria-haspopup="dialog" onClick={() => setProfileModalOpen(true)}>{session.user.email?.slice(0, 1).toUpperCase()}</button><div><strong>{session.user.email}</strong><small>Administrator</small></div></div>
+          <div className="admin-topbar__user"><NetworkStatus /><button className="admin-profile-trigger" type="button" aria-label="Open CedarAdmin account menu" aria-haspopup="dialog" onClick={() => setProfileModalOpen(true)}>C</button><div><strong>CedarAdmin</strong><small>{session.user.email}</small></div></div>
         </header>
 
         {notice && <div className="admin-notice" role="status"><span>{notice}</span><button type="button" aria-label="Dismiss message" onClick={() => setNotice('')}><Icon name="close" size={15} /></button></div>}
@@ -600,6 +600,7 @@ function AdminPage() {
               onUpdate={updateNewsletter}
               onSend={sendNewsletter}
             />
+            <NewsletterTemplatePreview draft={newsletter} />
           </>
         )}
       </main>
@@ -622,7 +623,7 @@ function AdminPage() {
         <div className="admin-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setProfileModalOpen(false) }}>
           <section className="admin-modal admin-profile-modal" role="dialog" aria-modal="true" aria-labelledby="admin-profile-title">
             <div className="admin-modal__heading"><div><p className="admin-kicker">Account</p><h2 id="admin-profile-title">Profile</h2></div><button type="button" aria-label="Close account menu" onClick={() => setProfileModalOpen(false)}><Icon name="close" size={20} /></button></div>
-            <div className="admin-profile-details"><span>{session.user.email?.slice(0, 1).toUpperCase()}</span><div><strong>{session.user.email}</strong><small>Administrator</small></div></div>
+            <div className="admin-profile-details"><span>C</span><div><strong>CedarAdmin</strong><small>{session.user.email}</small></div></div>
             <div className="admin-modal__actions"><button className="admin-secondary-button" type="button" onClick={() => setProfileModalOpen(false)}>Close</button><button className="admin-danger-button" type="button" onClick={signOut}><Icon name="close" size={15} /> Sign out</button></div>
           </section>
         </div>
@@ -825,6 +826,52 @@ function NewsletterImagePanel({ draft, busy, onUpdate, onUpload, onInsert }) {
         <button className="admin-secondary-button" type="button" disabled={busy || !draft.imageUrl} onClick={onInsert}>Insert image into message</button>
       </div>
       {draft.imageUrl && <img className="admin-newsletter-image-preview" src={draft.imageUrl} alt={draft.imageAlt || 'Newsletter image preview'} />}
+    </section>
+  )
+}
+
+function NewsletterTemplatePreview({ draft }) {
+  const lines = (draft.body || '').split(/\r?\n/)
+  const renderLine = (line, index) => {
+    const image = /^!\[([^\]]*)\]\((https:\/\/[^\s)]+)\)$/.exec(line.trim())
+    if (image) {
+      try {
+        if (new URL(image[2]).protocol === 'https:') {
+          return <img className="admin-email-preview__image" src={image[2]} alt={image[1]} key={`image-${index}`} />
+        }
+      } catch {
+        return <p className="admin-email-preview__text" key={`text-${index}`}>{line}</p>
+      }
+    }
+    if (!line.trim()) return <div className="admin-email-preview__space" key={`space-${index}`} />
+
+    const tokens = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\(https:\/\/[^\s)]+\))/g)
+    return <p className="admin-email-preview__text" key={`line-${index}`}>{tokens.map((token, tokenIndex) => {
+      if (token.startsWith('**') && token.endsWith('**')) return <strong key={tokenIndex}>{token.slice(2, -2)}</strong>
+      if (token.startsWith('*') && token.endsWith('*')) return <em key={tokenIndex}>{token.slice(1, -1)}</em>
+      const link = /^\[([^\]]+)\]\((https:\/\/[^\s)]+)\)$/.exec(token)
+      if (link) return <a href={link[2]} key={tokenIndex}>{link[1]}</a>
+      return token
+    })}</p>
+  }
+
+  return (
+    <section className="admin-newsletter-preview-wrap">
+      <div className="admin-published-manager__intro"><p className="admin-kicker">Live draft preview</p><h3>Email template</h3><p>This is how the newsletter will appear with Cedar branding.</p></div>
+      <article className="admin-email-preview">
+        <header><img src={cedarLogo} alt="Cedar Healthcare" /><strong>CEDAR HEALTHCARE, LLC</strong></header>
+        <div className="admin-email-preview__body">
+          <h2>{draft.subject || 'Your newsletter subject'}</h2>
+          <p className="admin-email-preview__intro">A thoughtful update from Cedar Healthcare.</p>
+          {draft.body.trim() ? lines.map(renderLine) : <p className="admin-email-preview__placeholder">Your newsletter message and images will appear here.</p>}
+          <a className="admin-email-preview__cta" href="https://cedarhealthcarehome.vercel.app">Visit Cedar Healthcare</a>
+        </div>
+        <footer>
+          <nav aria-label="Email footer links"><a href="https://cedarhealthcarehome.vercel.app">Visit Cedar</a><a href="https://cedarhealthcarehome.vercel.app/#services">Our services</a><a href="https://cedarhealthcarehome.vercel.app/#stories">Stories</a><a href="https://cedarhealthcarehome.vercel.app/#contact">Request care</a></nav>
+          <div className="admin-email-preview__socials"><a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fcedarhealthcarehome.vercel.app" aria-label="Share Cedar on Facebook">f</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fcedarhealthcarehome.vercel.app" aria-label="Share Cedar on LinkedIn">in</a><a href="https://wa.me/?text=Learn%20more%20about%20Cedar%20Healthcare" aria-label="Share Cedar on WhatsApp">wa</a></div>
+          <small>Cedar Healthcare, LLC · 7412 N Western Ave, Chicago, IL 60645<br />224-204-3281 · cedarhealthcarehome@gmail.com</small>
+        </footer>
+      </article>
     </section>
   )
 }
