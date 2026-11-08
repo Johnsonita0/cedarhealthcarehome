@@ -16,6 +16,21 @@ export function getSupabaseConfig() {
   return { config: { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY }, missing }
 }
 
+export function getSupabasePublicConfig() {
+  const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = process.env
+  const missing = []
+  if (!SUPABASE_URL) missing.push('SUPABASE_URL')
+  if (!SUPABASE_PUBLISHABLE_KEY) missing.push('SUPABASE_PUBLISHABLE_KEY')
+
+  return {
+    config: {
+      SUPABASE_URL,
+      SUPABASE_API_KEY: SUPABASE_PUBLISHABLE_KEY,
+    },
+    missing,
+  }
+}
+
 export function getResendConfig({ recipient = false } = {}) {
   const { RESEND_API_KEY, RESEND_FROM_EMAIL, CARE_REQUEST_RECIPIENT } = process.env
   const missing = []

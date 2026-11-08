@@ -1,4 +1,4 @@
-import { getSupabaseConfig, sendJson } from './_shared.js'
+import { getSupabasePublicConfig, sendJson } from './_shared.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     return sendJson(res, 405, { error: 'Method not allowed.' })
   }
 
-  const { config, missing } = getSupabaseConfig()
+  const { config, missing } = getSupabasePublicConfig()
   if (missing.length) {
     console.error('Published testimonials are unavailable because Supabase is not configured:', missing.join(', '))
     return sendJson(res, 503, { error: 'Stories are temporarily unavailable.' })
@@ -20,8 +20,7 @@ export default async function handler(req, res) {
     url.searchParams.set('limit', '5')
     const response = await fetch(url, {
       headers: {
-        apikey: config.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${config.SUPABASE_SERVICE_ROLE_KEY}`,
+        apikey: config.SUPABASE_API_KEY,
       },
     })
     if (!response.ok) {

@@ -123,6 +123,9 @@ grant select on public.newsletter_subscribers to authenticated;
 grant select, update, delete on public.testimonial_submissions to authenticated;
 grant select, insert, update, delete on public.testimonials to authenticated;
 grant select on public.testimonials to anon;
+revoke insert on public.care_requests from anon;
+revoke insert on public.newsletter_subscribers from anon;
+revoke insert on public.testimonial_submissions from anon;
 grant select (id, published, updated_at) on public.site_content to anon;
 grant select, insert, update on public.site_content to authenticated;
 grant select on public.newsletter_campaigns to authenticated;
@@ -131,15 +134,18 @@ drop policy if exists care_requests_admin_access on public.care_requests;
 create policy care_requests_admin_access on public.care_requests
   for all to authenticated using (public.is_cedar_admin())
   with check (public.is_cedar_admin());
+drop policy if exists care_requests_public_insert on public.care_requests;
 
 drop policy if exists newsletter_subscribers_admin_read on public.newsletter_subscribers;
 create policy newsletter_subscribers_admin_read on public.newsletter_subscribers
   for select to authenticated using (public.is_cedar_admin());
+drop policy if exists newsletter_subscribers_public_insert on public.newsletter_subscribers;
 
 drop policy if exists testimonial_submissions_admin_access on public.testimonial_submissions;
 create policy testimonial_submissions_admin_access on public.testimonial_submissions
   for all to authenticated using (public.is_cedar_admin())
   with check (public.is_cedar_admin());
+drop policy if exists testimonial_submissions_public_insert on public.testimonial_submissions;
 
 drop policy if exists testimonials_public_read on public.testimonials;
 create policy testimonials_public_read on public.testimonials
