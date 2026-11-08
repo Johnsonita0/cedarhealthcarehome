@@ -139,6 +139,7 @@ function HomePage() {
   const [legalModal, setLegalModal] = useState(null)
   const [testimonials, setTestimonials] = useState([])
   const [storiesError, setStoriesError] = useState(false)
+  const [showBackToTop, setShowBackToTop] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -164,6 +165,13 @@ function HomePage() {
     }, 6000)
 
     return () => window.clearInterval(intervalId)
+  }, [])
+
+  useEffect(() => {
+    const updateBackToTopVisibility = () => setShowBackToTop(window.scrollY > 400)
+    window.addEventListener('scroll', updateBackToTopVisibility, { passive: true })
+    updateBackToTopVisibility()
+    return () => window.removeEventListener('scroll', updateBackToTopVisibility)
   }, [])
 
   useEffect(() => {
@@ -309,19 +317,6 @@ function HomePage() {
       <main>
         <section className="hero" id="home">
           <div className="container hero__grid">
-            <div className="hero__copy">
-              <p className="eyebrow"><span className="eyebrow__line" /> {heroSlide.eyebrow}</p>
-              <h1>{heroSlide.title}</h1>
-              <p className="hero__intro">{heroSlide.description}</p>
-              <div className="hero__actions">
-                <a className="button button--green" href="#contact">Let’s talk about care</a>
-                <PortalLink className="button button--outline" />
-              </div>
-              <div className="hero__reassurance">
-                <span className="hero__reassurance-icon"><Icon name="heart" size={18} /></span>
-                <span>Care that honors the person<br /><strong>behind every care plan.</strong></span>
-              </div>
-            </div>
             <div className="hero__visual">
               <div className="hero__image-wrap">
                 {heroSlides.map((slide, index) => (
@@ -334,13 +329,21 @@ function HomePage() {
                     aria-hidden={index !== activeHeroSlide}
                   />
                 ))}
+                <div className="hero__copy">
+                  <p className="eyebrow"><span className="eyebrow__line" /> {heroSlide.eyebrow}</p>
+                  <h1>{heroSlide.title}</h1>
+                  <p className="hero__intro">{heroSlide.description}</p>
+                  <div className="hero__actions">
+                    <a className="button button--green" href="#contact">Let’s talk about care</a>
+                    <PortalLink className="button button--outline" />
+                  </div>
+                  <div className="hero__reassurance">
+                    <span className="hero__reassurance-icon"><Icon name="heart" size={18} /></span>
+                    <span>Care that honors the person<br /><strong>behind every care plan.</strong></span>
+                  </div>
+                </div>
                 <span className="hero__image-tag"><Icon name="spark" size={17} /> {heroSlide.imageCaption}</span>
               </div>
-              <div className="hero__note">
-                <span className="hero__note-icon"><Icon name="leaf" size={21} /></span>
-                <span><strong>{heroSlide.noteTitle}</strong><small>{heroSlide.noteDescription}</small></span>
-              </div>
-              <span className="hero__sunburst" aria-hidden="true">✳</span>
             </div>
           </div>
           <div className="container hero__foot">
@@ -570,8 +573,18 @@ function HomePage() {
         aria-label="Chat with Cedar Healthcare on WhatsApp"
       >
         <Icon name="whatsapp" size={25} />
-        <span>Chat with us</span>
       </a>
+
+      {showBackToTop && (
+        <button
+          className="desktop-back-to-top"
+          type="button"
+          aria-label="Scroll back to top"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
+          <Icon name="arrow-up" size={21} />
+        </button>
+      )}
 
       {storyOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setStoryOpen(false) }}>
