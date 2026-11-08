@@ -7,7 +7,7 @@ import { privacyPolicy, termsOfUse } from '../data/legalContent.js'
 const phoneNumber = '224-204-3281'
 const phoneLink = 'tel:+12242043281'
 const emailAddress = 'cedarhealthcarehome@gmail.com'
-const cardAosAnimations = ['fade-up', 'fade-left', 'zoom-in', 'fade-right']
+const cardAosAnimations = ['fade-up', 'zoom-in', 'fade-down']
 const cardAosByKey = new Map()
 
 function getCardAosAnimation(key) {
@@ -19,18 +19,22 @@ function getCardAosAnimation(key) {
 
 const heroSlides = [
   {
-    image: 'https://images.pexels.com/photos/29372733/pexels-photo-29372733.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A caregiver sharing a warm moment with an older adult',
-    eyebrow: 'Compassionate home care in Chicago',
-    title: <>Quality home care<br />you can <em>trust.</em></>,
-    description: 'Personalized, compassionate care that helps you live safely, comfortably, and independently at home.',
-    imageCaption: 'Here for you, every day',
-    noteTitle: 'Care, with heart.',
-    noteDescription: 'Support shaped around you.',
+    image: 'https://images.pexels.com/photos/6129106/pexels-photo-6129106.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A clinician speaking with a client while holding a clipboard',
+    position: '58% 30%',
+    mobilePosition: '60% 28%',
+    eyebrow: 'Thoughtful care, close to home',
+    title: <>Feel safer<br />right at <em>home.</em></>,
+    description: 'We help make home a more comfortable place to live, heal, and stay connected.',
+    imageCaption: 'Thoughtful care, close to home',
+    noteTitle: 'Feel at ease at home.',
+    noteDescription: 'A little more peace of mind.',
   },
   {
     image: 'https://images.pexels.com/photos/6129242/pexels-photo-6129242.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A home care professional helping a client feel comfortable at home',
+    alt: 'A caregiver comforting a client at home',
+    position: '55% 38%',
+    mobilePosition: '30% 35%',
     eyebrow: 'Care that feels like home',
     title: <>More comfort.<br />More <em>good days.</em></>,
     description: 'Thoughtful everyday support that protects your independence and makes room for what matters most.',
@@ -39,18 +43,10 @@ const heroSlides = [
     noteDescription: 'Care that fits your routine.',
   },
   {
-    image: 'https://images.pexels.com/photos/36706841/pexels-photo-36706841.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A family sharing a warm moment together',
-    eyebrow: 'Here for you and your family',
-    title: <>You don’t have<br />to do this <em>alone.</em></>,
-    description: 'We listen, we show up, and we build a care plan around the person you love.',
-    imageCaption: 'Stronger, together',
-    noteTitle: 'Here for your family.',
-    noteDescription: 'A team you can count on.',
-  },
-  {
     image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A healthcare professional offering attentive support',
+    alt: 'A caregiver sharing a reassuring moment with an older adult',
+    position: '52% 40%',
+    mobilePosition: '55% 38%',
     eyebrow: 'Personal support, every day',
     title: <>Care that meets<br />you <em>where you are.</em></>,
     description: 'From daily routines to changing health needs, our team is here with care that feels personal.',
@@ -60,33 +56,15 @@ const heroSlides = [
   },
   {
     image: 'https://images.pexels.com/photos/7446778/pexels-photo-7446778.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A care professional talking with a patient',
+    alt: 'A care professional speaking with clients around a table',
+    position: '50% 38%',
+    mobilePosition: '50% 35%',
     eyebrow: 'A team you can count on',
     title: <>A little help.<br />A lot more <em>peace.</em></>,
     description: 'Get the right support for your family, with a care team that listens and follows through.',
     imageCaption: 'A caring team by your side',
     noteTitle: 'People who listen.',
     noteDescription: 'Your needs come first.',
-  },
-  {
-    image: 'https://images.pexels.com/photos/6129106/pexels-photo-6129106.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A calm, welcoming healthcare environment',
-    eyebrow: 'Thoughtful care, close to home',
-    title: <>Feel safer<br />right at <em>home.</em></>,
-    description: 'We help make home a more comfortable place to live, heal, and stay connected.',
-    imageCaption: 'Thoughtful care, close to home',
-    noteTitle: 'Feel at ease at home.',
-    noteDescription: 'A little more peace of mind.',
-  },
-  {
-    image: 'https://images.pexels.com/photos/6753271/pexels-photo-6753271.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A healthcare professional listening to a patient',
-    eyebrow: 'Your needs come first',
-    title: <>Care built<br />around <em>you.</em></>,
-    description: 'Start with a conversation. Together, we can find support that fits your life and your goals.',
-    imageCaption: 'Listening is where care begins',
-    noteTitle: 'Your story matters.',
-    noteDescription: 'Care starts with listening.',
   },
 ]
 const services = [
@@ -366,6 +344,10 @@ function HomePage() {
                     key={slide.image}
                     src={slide.image}
                     alt={slide.alt}
+                    style={{
+                      '--hero-image-position': slide.position,
+                      '--hero-image-position-mobile': slide.mobilePosition,
+                    }}
                     fetchPriority={index === 0 ? 'high' : 'auto'}
                     aria-hidden={index !== activeHeroSlide}
                   />
