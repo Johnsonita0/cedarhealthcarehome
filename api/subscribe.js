@@ -1,4 +1,4 @@
-import { getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, sendEmail, sendJson, validEmail } from './_shared.js'
+import { getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson, validEmail } from './_shared.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -36,7 +36,13 @@ export default async function handler(req, res) {
   const emailSent = await sendEmail(resend, {
     to: email,
     subject: 'Welcome to Cedar Healthcare',
-    html: '<p>Thank you for subscribing to Cedar Healthcare updates. We’ll share occasional care tips and news. You can unsubscribe at any time by replying to this email.</p>',
+    html: renderBrandedEmail({
+      preheader: 'Thoughtful care tips and occasional updates from Cedar.',
+      title: 'Welcome to Cedar Healthcare',
+      intro: 'Thanks for joining our community.',
+      content: '<p style="margin:0;color:#405548;font-size:15px;line-height:1.75">We’ll share occasional care tips and thoughtful updates. You can unsubscribe at any time by replying to this email.</p>',
+      button: { url: 'https://cedarhealthcarehome.vercel.app/#services', label: 'Explore our services' },
+    }),
   })
   return sendJson(res, 200, { ok: true, emailSent })
 }

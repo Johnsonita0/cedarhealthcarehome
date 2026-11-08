@@ -1,4 +1,4 @@
-import { escapeHtml, getResendConfig, getSupabaseConfig, sendJson } from './_shared.js'
+import { getResendConfig, getSupabaseConfig, renderBrandedEmail, renderNewsletterContent, sendJson } from './_shared.js'
 
 const batchSize = 100
 
@@ -82,7 +82,13 @@ export default async function handler(req, res) {
     const { config: resend, missing: missingResend } = getResendConfig()
     if (missingResend.length) return sendJson(res, 503, { error: 'Newsletter email sending is not configured.' })
 
-    const html = `<div style="font-family:Arial,sans-serif;line-height:1.7;color:#203529"><p>${escapeHtml(message).replace(/\n/g, '<br>')}</p><p style="margin-top:32px;color:#718077;font-size:12px">To stop receiving Cedar updates, reply to this email and let us know.</p></div>`
+    const html = renderBrandedEmail({
+      preheader: subject,
+      title: subject,
+      intro: 'A thoughtful update from Cedar Healthcare.',
+      content: `${renderNewsletterContent(message)}<p style="margin:24px 0 0;color:#718077;font-size:12px;line-height:1.6">To stop receiving Cedar updates, reply to this email and let us know.</p>`,
+      button: { url: 'https://cedarhealthcarehome.vercel.app', label: 'Visit Cedar Healthcare' },
+    })
     const from = resend.RESEND_FROM_EMAIL
     if (action === 'test') {
       await sendBatch(resend.RESEND_API_KEY, [{ from, to: [user.email], subject: `[Test] ${subject}`, html }])

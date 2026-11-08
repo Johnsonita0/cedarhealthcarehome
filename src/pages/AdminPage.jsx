@@ -80,9 +80,9 @@ function AdminPage() {
   const [policyKey, setPolicyKey] = useState('privacyPolicy')
   const [newsletter, setNewsletter] = useState(() => {
     try {
-      return JSON.parse(window.localStorage.getItem('cedar-admin-newsletter-draft')) || { subject: '', body: '' }
+      return JSON.parse(window.localStorage.getItem('cedar-admin-newsletter-draft')) || { subject: '', body: '', imageUrl: '', imageAlt: '' }
     } catch {
-      return { subject: '', body: '' }
+      return { subject: '', body: '', imageUrl: '', imageAlt: '' }
     }
   })
 
@@ -217,6 +217,30 @@ function AdminPage() {
       const { data: publicImage } = supabase.storage.from('site-content').getPublicUrl(uploaded.path)
       updateHero('image', publicImage.publicUrl)
       notify('Image uploaded. Save or publish to use it on the public page.')
+    }
+    setBusy(false)
+  }
+
+  async function uploadNewsletterImage(file) {
+    const allowedTypes = new Map([
+      ['image/jpeg', 'jpg'],
+      ['image/png', 'png'],
+      ['image/webp', 'webp'],
+    ])
+    const extension = allowedTypes.get(file?.type)
+    if (!extension) return notify('Choose a JPG, PNG, or WebP image.', 'error')
+    if (file.size > 5 * 1024 * 1024) return notify('Choose an image smaller than 5 MB.', 'error')
+
+    setBusy(true)
+    const path = `newsletter/${window.crypto.randomUUID()}.${extension}`
+    const { data: uploaded, error } = await supabase.storage
+      .from('site-content')
+      .upload(path, file, { cacheControl: '3600', contentType: file.type, upsert: false })
+    if (error) notify(error.message || 'The image could not be uploaded.', 'error')
+    else {
+      const { data: publicImage } = supabase.storage.from('site-content').getPublicUrl(uploaded.path)
+      updateNewsletter('imageUrl', publicImage.publicUrl)
+      notify('Newsletter image uploaded.')
     }
     setBusy(false)
   }
@@ -388,6 +412,26 @@ function AdminPage() {
     window.localStorage.setItem('cedar-admin-newsletter-draft', JSON.stringify(next))
   }
 
+  function insertNewsletterImage() {
+    const imageUrl = newsletter.imageUrl.trim()
+    let parsedUrl
+    try {
+      parsedUrl = new URL(imageUrl)
+    } catch {
+      notify('Enter a valid HTTPS image URL or upload an image first.', 'warning')
+      return
+    }
+    if (parsedUrl.protocol !== 'https:') {
+      notify('Newsletter images must use HTTPS.', 'warning')
+      return
+    }
+
+    const alt = (newsletter.imageAlt.trim() || 'Cedar Healthcare update').replace(/[\]\\\r\n]/g, ' ')
+    const imageBlock = `![${alt}](${parsedUrl.toString()})`
+    updateNewsletter('body', `${newsletter.body.trimEnd()}${newsletter.body.trim() ? '\n\n' : ''}${imageBlock}\n`)
+    notify('Image block added to the newsletter draft.')
+  }
+
   async function sendNewsletter(action) {
     if (!newsletter.subject.trim() || !newsletter.body.trim()) {
       notify('Add a subject and message first.', 'warning')
@@ -411,7 +455,7 @@ function AdminPage() {
     else {
       notify(action === 'test' ? `Test sent to ${session.user.email}.` : `Newsletter sent to ${result.sent} subscribers.`, result.historySaved === false ? 'warning' : 'success')
       if (action === 'send') {
-        const cleared = { subject: '', body: '' }
+        const cleared = { subject: '', body: '', imageUrl: '', imageAlt: '' }
         setNewsletter(cleared)
         window.localStorage.removeItem('cedar-admin-newsletter-draft')
       }
@@ -538,14 +582,23 @@ function AdminPage() {
           />
         )}
         {activeView === 'newsletter' && (
-          <NewsletterView
-            draft={newsletter}
-            subscribers={data.subscribers}
-            campaigns={data.campaigns}
-            busy={busy}
-            onUpdate={updateNewsletter}
-            onSend={sendNewsletter}
-          />
+          <>
+            <NewsletterImagePanel
+              draft={newsletter}
+              busy={busy}
+              onUpdate={updateNewsletter}
+              onUpload={uploadNewsletterImage}
+              onInsert={insertNewsletterImage}
+            />
+            <NewsletterView
+              draft={newsletter}
+              subscribers={data.subscribers}
+              campaigns={data.campaigns}
+              busy={busy}
+              onUpdate={updateNewsletter}
+              onSend={sendNewsletter}
+            />
+          </>
         )}
       </main>
 
@@ -741,6 +794,25 @@ function ReviewsView({ filter, pending, testimonials, onFilterChange, onPublish,
   return (
     <section className="admin-workspace"><div className="admin-page-heading"><div><p className="admin-kicker">Stories from Cedar families</p><h2>Testimonials</h2><p>Review every story before it appears on the public site.</p></div></div><div className="admin-review-tabs"><button type="button" className={filter === 'pending' ? 'is-active' : ''} onClick={() => onFilterChange('pending')}>Pending <span>{pending.length}</span></button><button type="button" className={filter === 'published' ? 'is-active' : ''} onClick={() => onFilterChange('published')}>Published</button><button type="button" className={filter === 'hidden' ? 'is-active' : ''} onClick={() => onFilterChange('hidden')}>Unpublished</button></div>
       {items.length ? <div className="admin-review-grid">{items.map((item) => { const isPending = filter === 'pending'; const isPublished = item.is_published; return <article className="admin-review-card" key={`${isPending ? 'pending' : 'saved'}-${item.id}`}><div className="admin-review-card__top"><div className="admin-review-avatar">{(item.name || 'C').slice(0, 1).toUpperCase()}</div><div><strong>{item.name}</strong><small>{item.relationship}{item.location ? ` · ${item.location}` : ''}</small></div><span className={`admin-status-pill${isPublished ? ' is-replied' : ''}`}>{isPending ? 'Pending' : isPublished ? 'Published' : 'Unpublished'}</span></div><div className="admin-stars" aria-label={`${item.rating || 5} out of 5 stars`}>{'★'.repeat(item.rating || 5)}<span>{'★'.repeat(5 - (item.rating || 5))}</span></div><p>{item.story}</p><small className="admin-review-card__date">{displayDate(item.created_at)}</small><div className="admin-review-card__actions">{isPending ? <button className="admin-primary-button" type="button" onClick={() => onPublish(item)}>Publish</button> : <button className="admin-secondary-button" type="button" onClick={() => onToggle(item, !isPublished)}>{isPublished ? 'Unpublish' : 'Publish'}</button>}<button className="admin-secondary-button" type="button" onClick={() => onEdit({ ...item, source: isPending ? 'pending' : 'saved' })}>Edit</button><button className="admin-danger-button" type="button" onClick={() => onDelete(item, isPending ? 'pending' : 'saved')}>Delete</button></div></article>})}</div> : <div className="admin-empty-state"><Icon name="quote" size={27} /><h3>No testimonials here</h3><p>Submissions and published stories will appear in their respective lists.</p></div>}
+    </section>
+  )
+}
+
+function NewsletterImagePanel({ draft, busy, onUpdate, onUpload, onInsert }) {
+  return (
+    <section className="admin-panel admin-newsletter-image-panel">
+      <div className="admin-newsletter-image-panel__heading"><div><p className="admin-kicker">Newsletter content</p><h3>Add an image</h3></div><small>Images load from their public HTTPS URL in email apps.</small></div>
+      <div className="admin-newsletter-image-panel__controls">
+        <label>Image URL<input type="url" value={draft.imageUrl || ''} onChange={(event) => onUpdate('imageUrl', event.target.value)} placeholder="https://example.com/image.jpg" /></label>
+        <label>Image description<input value={draft.imageAlt || ''} onChange={(event) => onUpdate('imageAlt', event.target.value)} maxLength="160" placeholder="Describe the image" /></label>
+        <label className="admin-upload-dropzone admin-newsletter-image-upload">
+          <input className="admin-upload-input" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={(event) => { const [file] = event.target.files || []; if (file) onUpload(file); event.target.value = '' }} />
+          <span className="admin-upload-dropzone__icon"><Icon name="image" size={20} /></span>
+          <span className="admin-upload-dropzone__copy"><strong>Upload image</strong><small>JPG, PNG, or WebP · Max 5 MB</small></span>
+        </label>
+        <button className="admin-secondary-button" type="button" disabled={busy || !draft.imageUrl} onClick={onInsert}>Insert image into message</button>
+      </div>
+      {draft.imageUrl && <img className="admin-newsletter-image-preview" src={draft.imageUrl} alt={draft.imageAlt || 'Newsletter image preview'} />}
     </section>
   )
 }

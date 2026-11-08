@@ -1,4 +1,4 @@
-import { escapeHtml, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, sendEmail, sendJson } from './_shared.js'
+import { escapeHtml, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson } from './_shared.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -48,7 +48,13 @@ export default async function handler(req, res) {
     return sendJson(res, 200, { ok: true, notificationSent: false })
   }
 
-  const emailHtml = `<h2>New story to review</h2><p><strong>Name:</strong> ${escapeHtml(name)}</p><p><strong>Relationship:</strong> ${escapeHtml(relationship)}</p><p><strong>Rating:</strong> ${rating}/5</p>${location ? `<p><strong>Location:</strong> ${escapeHtml(location)}</p>` : ''}<p><strong>Story:</strong></p><p>${escapeHtml(story).replace(/\n/g, '<br>')}</p><p>This story has not been published.</p>`
+  const emailHtml = renderBrandedEmail({
+    preheader: `A new testimonial from ${name} is waiting for review.`,
+    title: 'A story is ready for review',
+    intro: 'A Cedar family has shared their experience. This story is not published until an admin approves it.',
+    content: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse"><tr><td style="padding:8px 0;color:#6b7b70;font-size:13px;font-weight:bold">Name</td><td style="padding:8px 0;color:#203529;font-size:13px">${escapeHtml(name)}</td></tr><tr><td style="padding:8px 0;color:#6b7b70;font-size:13px;font-weight:bold">Relationship</td><td style="padding:8px 0;color:#203529;font-size:13px">${escapeHtml(relationship)}</td></tr><tr><td style="padding:8px 0;color:#6b7b70;font-size:13px;font-weight:bold">Rating</td><td style="padding:8px 0;color:#b48626;font-size:13px">${'★'.repeat(rating)}${'☆'.repeat(5 - rating)} (${rating}/5)</td></tr>${location ? `<tr><td style="padding:8px 0;color:#6b7b70;font-size:13px;font-weight:bold">Location</td><td style="padding:8px 0;color:#203529;font-size:13px">${escapeHtml(location)}</td></tr>` : ''}</table><h2 style="margin:20px 0 8px;color:#294836;font-size:16px">Story</h2><p style="margin:0;color:#405548;font-size:14px;line-height:1.75;white-space:pre-wrap">${escapeHtml(story)}</p>`,
+    button: { url: 'https://cedarhealthcarehome.vercel.app/admin', label: 'Review testimonial' },
+  })
   const notificationSent = await sendEmail(resend, {
     to: resend.CARE_REQUEST_RECIPIENT,
     subject: `A Cedar family story from ${name}`,

@@ -16,7 +16,7 @@ Use `npx vercel dev` instead of `npm run dev` when you need the local Vercel API
 ## Supabase and Resend setup
 
 1. Run the latest [`supabase/schema.sql`](./supabase/schema.sql) in the Cedar Supabase project's SQL editor. It creates the content image bucket; images are public to view and only the allowlisted admin can upload or update them.
-2. Copy `.env.example` to `.env.local` and set the public `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` values, plus `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, and `CARE_REQUEST_RECIPIENT` for server routes.
+2. Copy `.env.example` to `.env.local` and set the public `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` values, plus `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, and `CARE_REQUEST_RECIPIENT` for server routes. `PUBLIC_SITE_URL` and `EMAIL_LOGO_URL` optionally override the defaults used in branded email footers.
 3. Keep the Supabase service role key and Resend key on the server. Do not add a `VITE_` prefix to either secret.
 4. Confirm the administrator's Supabase Auth user ID is `bb9a9a8e-83b6-4c7a-b101-dcfdfe9fd20c`. The console has no public sign-up flow; the UI, API, and RLS allow only this exact identity.
 5. Supabase Auth verifies and stores passwords server-side. Do not hash passwords in the browser or store them in the app; never put the service-role key in a `VITE_` variable.

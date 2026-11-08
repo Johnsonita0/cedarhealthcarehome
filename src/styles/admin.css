@@ -204,6 +204,18 @@
 .admin-audience-count strong { margin-right: 4px; color: #22563a; font-size: 15px; }
 .admin-newsletter-grid { display: grid; grid-template-columns: 1.4fr .6fr; gap: 14px; align-items: start; }
 .admin-newsletter-compose { display: grid; gap: 15px; }
+.admin-newsletter-image-panel { display: grid; gap: 14px; margin-bottom: 12px; }
+.admin-newsletter-image-panel__heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; }
+.admin-newsletter-image-panel__heading h3 { margin: 0; color: #284735; font-size: 15px; }
+.admin-newsletter-image-panel__heading > small { color: #87948b; font-size: 9px; }
+.admin-newsletter-image-panel__controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(210px, .8fr) auto; align-items: end; gap: 10px; }
+.admin-newsletter-image-panel__controls > label:not(.admin-upload-dropzone) { display: grid; gap: 7px; color: #44594c; font-size: 10px; font-weight: 600; }
+.admin-newsletter-image-panel__controls input:not([type="file"]) { width: 100%; height: 39px; min-width: 0; padding: 0 10px; border: 1px solid #dfe7e1; border-radius: 4px; color: #263a2d; background: #fff; font: 400 10px 'DM Sans', sans-serif; }
+.admin-newsletter-image-upload { min-height: 54px; padding: 7px 9px; }
+.admin-newsletter-image-upload .admin-upload-dropzone__icon { width: 34px; height: 34px; flex-basis: 34px; }
+.admin-newsletter-image-upload .admin-upload-dropzone__copy strong { font-size: 9px; }
+.admin-newsletter-image-upload .admin-upload-dropzone__copy small { font-size: 8px; }
+.admin-newsletter-image-preview { width: min(100%, 360px); max-height: 150px; border: 1px solid #e4ebe6; border-radius: 5px; background: #f7faf7; object-fit: cover; object-position: center; }
 .admin-newsletter-compose input { height: 42px; }
 .admin-newsletter-compose textarea { min-height: 240px; }
 .admin-compose-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -279,6 +291,8 @@
   .admin-message { min-height: 90px; margin: 20px 0; }
   .admin-review-card { padding: 16px; }
   .admin-compose-footer { align-items: flex-start; flex-direction: column; }
+  .admin-newsletter-image-panel__heading { align-items: flex-start; flex-direction: column; }
+  .admin-newsletter-image-panel__controls { grid-template-columns: 1fr; }
   .admin-compose-footer > div { width: 100%; justify-content: stretch; }
   .admin-compose-footer > div button { flex: 1; white-space: normal; }
   .admin-mobile-nav { position: fixed; z-index: 30; right: 0; bottom: 0; left: 0; display: flex; justify-content: space-around; padding: 7px 5px max(8px, env(safe-area-inset-bottom)); border-top: 1px solid #dfe8e1; background: rgba(255,255,255,.97); box-shadow: 0 -7px 22px rgba(24,55,37,.08); backdrop-filter: blur(12px); }
