@@ -2,6 +2,7 @@ create table if not exists public.care_requests (
   id uuid primary key default gen_random_uuid(),
   full_name text not null,
   contact text not null,
+  whatsapp_number text,
   message text not null,
   created_at timestamptz not null default now()
 );
