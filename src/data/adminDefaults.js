@@ -3,10 +3,10 @@ import { privacyPolicy, termsOfUse } from './legalContent.js'
 export const defaultSiteContent = {
   hero: {
     image: 'https://images.pexels.com/photos/6129106/pexels-photo-6129106.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    eyebrow: 'Thoughtful care, close to home',
-    headline: 'Feel safer right at home.',
-    introduction: 'We help make home a more comfortable place to live, heal, and stay connected.',
-    primaryLabel: 'Let’s talk about care',
+    eyebrow: 'Personalized home care in Chicago',
+    headline: 'Support shaped around your life.',
+    introduction: 'From daily routines to changing health needs, Cedar offers thoughtful support to help you feel comfortable, connected, and cared for at home.',
+    primaryLabel: 'Talk with our care team',
     primaryUrl: '#contact',
     secondaryLabel: 'Open App',
     secondaryUrl: import.meta.env.VITE_CLIENT_APP_URL || '',
@@ -14,19 +14,19 @@ export const defaultSiteContent = {
   faqs: [
     {
       question: 'What services do you offer?',
-      answer: 'We offer personal care, skilled nursing, specialized care, companionship, homemaker services, and 24/7 availability.',
+      answer: 'Cedar offers personal care, skilled nursing, specialized care, companionship, homemaker services, and around-the-clock availability. Contact us to discuss which services may fit your needs.',
     },
     {
-      question: 'How do I request care?',
-      answer: 'Send us a care request using the form on this page or call us at 224-204-3281. Our team will be in touch to learn more about your needs.',
+      question: 'How do I get started?',
+      answer: 'Send a care request using the form on this page or call 224-204-3281. Our team will listen, learn about your routines and goals, and talk through possible next steps.',
+    },
+    {
+      question: 'Can Cedar help with changing health needs or recovery at home?',
+      answer: 'Our skilled nursing and specialized care services may support ongoing health needs and recovery after a hospital stay. Call us so we can discuss your situation and confirm what services and availability are appropriate.',
     },
     {
       question: 'Where does Cedar Healthcare provide care?',
-      answer: 'Our office is in Chicago, Illinois. Call our team to talk about care availability in your area.',
-    },
-    {
-      question: 'Can I talk with someone before choosing a service?',
-      answer: 'Absolutely. Call us or send a request and we will help you explore the options that may be right for you and your family.',
+      answer: 'Our office is in Chicago, Illinois. Contact our team to ask about care availability in your area.',
     },
   ],
   privacyPolicy,

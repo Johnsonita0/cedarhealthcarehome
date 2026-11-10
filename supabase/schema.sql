@@ -44,7 +44,8 @@ grant all on public.testimonial_submissions to service_role;
 grant all on public.testimonials to service_role;
 
 alter table public.care_requests
-  add column if not exists status text not null default 'new';
+  add column if not exists status text not null default 'new',
+  add column if not exists whatsapp_number text;
 alter table public.testimonial_submissions
   add column if not exists rating smallint not null default 5,
   add column if not exists location text;

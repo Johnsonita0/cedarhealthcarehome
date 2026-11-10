@@ -57,11 +57,11 @@ const heroSlideCandidates = [
     position: 'center',
     mobilePosition: 'center',
     brandSlide: true,
-    eyebrow: 'Cedar Healthcare',
-    title: <>Thoughtful care,<br />right at <em>home.</em></>,
-    description: 'Personalized support that helps make home a more comfortable place to live, heal, and stay connected.',
+    eyebrow: 'Personalized home care in Chicago',
+    title: <>Support shaped<br />around <em>your life.</em></>,
+    description: 'From daily routines to changing health needs, Cedar offers thoughtful support to help you feel comfortable, connected, and cared for at home.',
     imageCaption: 'Cedar Healthcare, LLC',
-    noteTitle: 'Care that feels like home.',
+    noteTitle: 'Care that fits your day.',
     noteDescription: 'Here when it matters.',
   },
   {
@@ -276,32 +276,32 @@ const heroSlides = heroSlideCandidates.reduce((uniqueSlides, slide) => {
 const services = [
   {
     title: 'Personal care',
-    description: 'Thoughtful help with bathing, dressing, grooming, and the routines that make a day feel like your own.',
+    description: 'Respectful help with bathing, dressing, grooming, mobility, and the daily routines that matter to you.',
     icon: 'care',
   },
   {
     title: 'Skilled nursing',
-    description: 'Professional health support, medication reminders, and wellness check-ins from people who care.',
+    description: 'Skilled health support and wellness check-ins, delivered with clear communication and personal attention.',
     icon: 'health',
   },
   {
     title: 'Specialized care',
-    description: 'Steady, personalized support for chronic conditions, recovery after a hospital stay, and changing needs.',
+    description: 'Personalized support for chronic conditions, recovery after a hospital stay, and changing health needs.',
     icon: 'heart',
   },
   {
     title: 'Companionship',
-    description: 'Good company, meaningful conversation, and a reassuring presence for clients and their loved ones.',
+    description: 'Friendly company, conversation, and a reassuring presence that can bring more connection to the day.',
     icon: 'people',
   },
   {
     title: 'Homemaker services',
-    description: 'A little help around the home, from light housekeeping and meal preparation to everyday errands.',
+    description: 'Practical help with meal preparation, light housekeeping, and everyday errands around the home.',
     icon: 'home',
   },
   {
     title: '24/7 availability',
-    description: 'Care and support when you need it, because the people you love deserve to feel safe at any hour.',
+    description: 'Talk with our team about scheduling options, including around-the-clock support, for your family’s needs.',
     icon: 'clock',
   },
 ]
@@ -627,8 +627,8 @@ function HomePage() {
           <div className="container">
             <div className="section-heading section-heading--center">
               <p className="eyebrow"><span className="eyebrow__line" /> Home care in Chicago, Illinois</p>
-              <h2>Support for every<br /><em>part of life.</em></h2>
-              <p>Cedar Healthcare offers personal care, skilled nursing, specialized care, companionship, and homemaker services in Chicago, Illinois.</p>
+              <h2>Care that fits<br /><em>real life.</em></h2>
+              <p>From everyday assistance to skilled and specialized support, Cedar’s services are shaped around each person’s needs, routines, and goals.</p>
             </div>
             <div className="services__grid">
               {services.map((service) => (
@@ -652,8 +652,8 @@ function HomePage() {
           <div className="container about__grid">
             <div className="about__intro">
               <p className="eyebrow eyebrow--light"><span className="eyebrow__line" /> A little about Cedar</p>
-              <h2>Good care begins<br />with <em>being seen.</em></h2>
-              <p>Home is more than a place. It’s where people feel like themselves. We’re here to help make more good days at home possible.</p>
+              <h2>Good care begins<br />with <em>being heard.</em></h2>
+              <p>Home is personal. We take time to understand what matters to each person and their family, then provide support that respects their routines and choices.</p>
               <a className="button button--cream" href="#contact">Meet your care team</a>
               <span className="about__leaf" aria-hidden="true"><Icon name="leaf" size={100} /></span>
             </div>
@@ -661,12 +661,12 @@ function HomePage() {
               <article className="value-card" data-aos={getCardAosAnimation('mission-card')}>
                 <span className="value-card__label">Our mission</span>
                 <h3>Care with purpose.</h3>
-                <p>To deliver exceptional home care services that promote dignity, independence, and better health for every individual we serve.</p>
+                <p>To provide attentive home care that supports dignity, independence, and well-being, one person’s needs at a time.</p>
               </article>
               <article className="value-card value-card--sage" data-aos={getCardAosAnimation('vision-card')}>
                 <span className="value-card__label">Our vision</span>
                 <h3>A brighter kind of care.</h3>
-                <p>To be a trusted leader in home care, known for our compassion, integrity, and commitment to enriching lives in our communities.</p>
+                <p>A community where individuals and families can find dependable, compassionate support at home through every season of life.</p>
               </article>
               <div className="about__signoff"><span className="about__signoff-dot" /> Rooted in compassion. Here when it matters.</div>
             </div>
@@ -734,7 +734,7 @@ function HomePage() {
             <div className="faq__intro">
               <p className="eyebrow"><span className="eyebrow__line" /> Here to make it clearer</p>
               <h2>A few things<br />you might be <em>wondering.</em></h2>
-              <p>It’s okay to have questions. If you can’t find what you’re looking for, just reach out and ask.</p>
+              <p>From choosing a service to understanding the next step, our team is here to help make things clearer.</p>
               <a className="text-link" href="#contact">Ask us anything <Icon name="arrow" size={16} /></a>
             </div>
             <div className="faq__list">
@@ -753,7 +753,7 @@ function HomePage() {
             <div className="contact__heading">
               <p className="eyebrow eyebrow--light"><span className="eyebrow__line" /> One conversation can be a start</p>
               <h2>Let’s find the care<br />that feels <em>right.</em></h2>
-              <p>Tell us a little about what you need. A real person from our team will be in touch.</p>
+              <p>Tell us what kind of help would make a difference. Our team will listen and talk through services and availability with you.</p>
             </div>
             <div className="contact__grid">
               <div className="contact__details">
@@ -784,6 +784,8 @@ function HomePage() {
                 <input id="care-name" name="name" autoComplete="name" placeholder="How should we address you?" maxLength="120" required />
                 <label htmlFor="care-contact">Phone or email <span>*</span></label>
                 <input id="care-contact" name="contact" autoComplete="email" placeholder="The best way to reach you" maxLength="160" required />
+                <label htmlFor="care-whatsapp">WhatsApp number <span className="story-form__optional">Optional</span></label>
+                <input id="care-whatsapp" name="whatsappNumber" type="tel" autoComplete="tel" inputMode="tel" placeholder="Include your country code, e.g. +1 224 204 3281" maxLength="25" />
                 <label htmlFor="care-message">How can we help? <span>*</span></label>
                 <textarea id="care-message" name="message" rows="3" placeholder="Tell us a little about the care you’re looking for…" maxLength="2000" required />
                 <div className="contact-form__bottom">
