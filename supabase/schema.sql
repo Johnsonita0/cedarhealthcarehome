@@ -82,6 +82,97 @@ alter table public.newsletter_campaigns
   add column if not exists recipient_count integer not null default 0,
   add column if not exists sent_at timestamptz not null default now();
 
+-- Normalize an older UUID-keyed CMS table to the integer singleton ID used by
+-- the admin console. Merge JSON content first so existing drafts and published
+-- sections are retained when consolidating legacy rows.
+do $$
+declare
+  id_type oid;
+  id_attnum smallint;
+  keep_uuid uuid;
+  item record;
+  saved_draft jsonb := '{}'::jsonb;
+  saved_published jsonb := '{}'::jsonb;
+  saved_updated_at timestamptz;
+  saved_published_at timestamptz;
+  existing_constraint record;
+begin
+  select attribute.atttypid, attribute.attnum
+  into id_type, id_attnum
+  from pg_attribute as attribute
+  where attribute.attrelid = 'public.site_content'::regclass
+    and attribute.attname = 'id'
+    and not attribute.attisdropped;
+
+  if id_type = 'uuid'::regtype then
+    if exists (
+      select 1
+      from pg_constraint as constraint_row
+      where constraint_row.contype = 'f'
+        and constraint_row.confrelid = 'public.site_content'::regclass
+        and id_attnum = any (constraint_row.confkey)
+    ) then
+      raise exception 'Cannot convert public.site_content.id because another table references it.';
+    end if;
+
+    for item in
+      select content.draft, content.published, content.updated_at, content.published_at
+      from public.site_content as content
+      order by content.updated_at asc nulls first, content.id::text
+    loop
+      saved_draft := saved_draft || coalesce(item.draft, '{}'::jsonb);
+      saved_published := saved_published || coalesce(item.published, '{}'::jsonb);
+      saved_updated_at := greatest(saved_updated_at, item.updated_at);
+      saved_published_at := greatest(saved_published_at, item.published_at);
+    end loop;
+
+    select content.id
+    into keep_uuid
+    from public.site_content as content
+    order by content.updated_at desc nulls last, content.id::text
+    limit 1;
+
+    if keep_uuid is not null then
+      delete from public.site_content where id <> keep_uuid;
+    end if;
+
+    alter table public.site_content alter column id drop default;
+
+    for existing_constraint in
+      select constraint_row.conname
+      from pg_constraint as constraint_row
+      where constraint_row.conrelid = 'public.site_content'::regclass
+        and constraint_row.contype in ('p', 'c')
+        and id_attnum = any (constraint_row.conkey)
+    loop
+      execute format(
+        'alter table public.site_content drop constraint %I',
+        existing_constraint.conname
+      );
+    end loop;
+
+    alter table public.site_content
+      alter column id type integer using 1;
+    alter table public.site_content
+      alter column id set default 1;
+
+    update public.site_content
+    set draft = saved_draft,
+        published = saved_published,
+        updated_at = coalesce(saved_updated_at, updated_at),
+        published_at = coalesce(saved_published_at, published_at),
+        id = 1;
+
+    alter table public.site_content
+      add constraint site_content_pkey primary key (id);
+    alter table public.site_content
+      add constraint site_content_singleton_id_check check (id = 1);
+  elsif id_type <> 'integer'::regtype then
+    raise exception 'Unsupported public.site_content.id type: %', format_type(id_type, null);
+  end if;
+end;
+$$;
+
 -- Backfill and enforce defaults for records created before these fields existed.
 update public.care_requests
 set status = 'new'
