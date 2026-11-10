@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { privacyPolicy, termsOfUse } from '../data/legalContent.js'
 
-const publicSiteUrl = 'https://cedarhealthcarehome.org'
+const publicSiteUrl = 'https://www.cedarhealthcarehome.com'
 
 function LegalPage() {
   const isTerms = window.location.pathname.replace(/\/+$/, '') === '/terms'

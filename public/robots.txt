@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://cedarhealthcarehome.org/sitemap.xml
+Sitemap: https://www.cedarhealthcarehome.com/sitemap.xml

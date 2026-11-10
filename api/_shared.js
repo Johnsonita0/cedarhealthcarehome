@@ -45,7 +45,7 @@ export function getResendConfig({ recipient = false } = {}) {
 }
 
 export function getPublicSiteUrl() {
-  const defaultUrl = 'https://cedarhealthcarehome.org'
+  const defaultUrl = 'https://www.cedarhealthcarehome.com'
   try {
     const url = new URL(process.env.PUBLIC_SITE_URL || defaultUrl)
     return ['https:', 'http:'].includes(url.protocol) ? url.origin : defaultUrl

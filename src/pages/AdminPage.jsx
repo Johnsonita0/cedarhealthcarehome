@@ -6,7 +6,7 @@ import cedarLogo from '../images/logo/logo.jpeg'
 import { isCedarAdminUser, isSupabaseConfigured, supabase } from '../supabaseClient.js'
 import '../styles/admin.css'
 
-const publicSiteUrl = 'https://cedarhealthcarehome.org'
+const publicSiteUrl = 'https://www.cedarhealthcarehome.com'
 const publicSiteShareUrl = encodeURIComponent(publicSiteUrl)
 const publicSiteShareMessage = encodeURIComponent(`Learn more about Cedar Healthcare: ${publicSiteUrl}`)
 
