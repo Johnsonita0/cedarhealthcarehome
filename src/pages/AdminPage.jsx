@@ -101,6 +101,7 @@ function AdminPage() {
       return { subject: '', body: '', imageUrl: '', imageAlt: '' }
     }
   })
+  const [templateTestRecipient, setTemplateTestRecipient] = useState('cedarhealthcarehome@gmail.com')
 
   function notify(message, type = 'success') {
     setNotice(message)
@@ -511,6 +512,36 @@ function AdminPage() {
     setBusy(false)
   }
 
+  async function sendTemplatePreviews() {
+    const recipient = templateTestRecipient.trim()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+      notify('Enter a valid recipient email address.', 'warning')
+      return
+    }
+    if (!window.confirm(`Send four test emails to ${recipient}? No production records will be created.`)) return
+
+    setBusy(true)
+    setNotice('')
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const response = await fetch('/api/admin-email-template-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionData.session?.access_token || ''}`,
+        },
+        body: JSON.stringify({ recipient }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) notify(result.error || 'The test emails could not be sent.', 'error')
+      else notify(`Four test emails sent to ${result.recipient}.`)
+    } catch (error) {
+      notify(error.message || 'The test emails could not be sent.', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (authLoading) return <SiteSplash />
   if (!session) {
     return (
@@ -693,6 +724,9 @@ function AdminPage() {
               busy={busy}
               onUpdate={updateNewsletter}
               onSend={sendNewsletter}
+              testRecipient={templateTestRecipient}
+              onTestRecipientChange={setTemplateTestRecipient}
+              onSendTemplatePreviews={sendTemplatePreviews}
             />
             <NewsletterTemplatePreview draft={newsletter} />
           </>
@@ -1019,9 +1053,9 @@ function NewsletterTemplatePreview({ draft }) {
   )
 }
 
-function NewsletterView({ draft, subscribers, campaigns, busy, onUpdate, onSend }) {
+function NewsletterView({ draft, subscribers, campaigns, busy, onUpdate, onSend, testRecipient, onTestRecipientChange, onSendTemplatePreviews }) {
   return (
-    <section className="admin-workspace"><div className="admin-page-heading"><div><p className="admin-kicker">Cedar notes</p><h2>Newsletter</h2><p>Write an update, send yourself a test, then send it to subscribers.</p></div><span className="admin-audience-count"><strong>{subscribers.length}</strong> subscribers</span></div><div className="admin-newsletter-grid"><div className="admin-panel admin-newsletter-compose"><label>Subject<input value={draft.subject} onChange={(event) => onUpdate('subject', event.target.value)} maxLength="200" placeholder="A little care in your inbox" /></label><label>Message<textarea value={draft.body} onChange={(event) => onUpdate('body', event.target.value)} rows="12" maxLength="10000" placeholder="Write your update…" /></label><div className="admin-compose-footer"><small>Draft saves automatically on this device.</small><div><button className="admin-secondary-button" type="button" disabled={busy} onClick={() => onSend('test')}>Send test to me</button><button className="admin-primary-button" type="button" disabled={busy || !subscribers.length} onClick={() => onSend('send')}>Send to all subscribers</button></div></div></div><aside className="admin-panel admin-newsletter-aside"><p className="admin-kicker">Audience</p><h3>{subscribers.length} subscribers</h3><p>People who signed up through the Cedar public website.</p><div className="admin-subscriber-list">{subscribers.slice(0, 8).map((subscriber) => <div key={subscriber.id}><span>{subscriber.email.slice(0, 1).toUpperCase()}</span><strong>{subscriber.email}</strong><small>{displayDate(subscriber.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}</small></div>)}{!subscribers.length && <small>No subscribers yet.</small>}</div></aside></div><div className="admin-panel admin-campaign-history"><p className="admin-kicker">Recent sends</p><h3>Past newsletters</h3>{campaigns.length ? campaigns.map((campaign) => <div className="admin-campaign-row" key={campaign.id}><span><strong>{campaign.subject}</strong><small>{displayDate(campaign.sent_at, { dateStyle: 'medium', timeStyle: 'short' })}</small></span><em>{campaign.recipient_count} recipients</em></div>) : <p className="admin-muted">Sent campaigns will appear here.</p>}</div></section>
+    <section className="admin-workspace"><div className="admin-page-heading"><div><p className="admin-kicker">Cedar notes</p><h2>Newsletter</h2><p>Write an update, send yourself a test, then send it to subscribers.</p></div><span className="admin-audience-count"><strong>{subscribers.length}</strong> subscribers</span></div><div className="admin-panel"><p className="admin-kicker">Template check</p><h3>Preview every email</h3><p>Send sample versions of the welcome, care request, story review, and newsletter emails. This does not create or change production records.</p><label>Send previews to<input type="email" value={testRecipient} onChange={(event) => onTestRecipientChange(event.target.value)} maxLength="254" required /></label><button className="admin-secondary-button" type="button" disabled={busy} onClick={onSendTemplatePreviews}>Send all four test emails</button></div><div className="admin-newsletter-grid"><div className="admin-panel admin-newsletter-compose"><label>Subject<input value={draft.subject} onChange={(event) => onUpdate('subject', event.target.value)} maxLength="200" placeholder="A little care in your inbox" /></label><label>Message<textarea value={draft.body} onChange={(event) => onUpdate('body', event.target.value)} rows="12" maxLength="10000" placeholder="Write your update…" /></label><div className="admin-compose-footer"><small>Draft saves automatically on this device.</small><div><button className="admin-secondary-button" type="button" disabled={busy} onClick={() => onSend('test')}>Send test to me</button><button className="admin-primary-button" type="button" disabled={busy || !subscribers.length} onClick={() => onSend('send')}>Send to all subscribers</button></div></div></div><aside className="admin-panel admin-newsletter-aside"><p className="admin-kicker">Audience</p><h3>{subscribers.length} subscribers</h3><p>People who signed up through the Cedar public website.</p><div className="admin-subscriber-list">{subscribers.slice(0, 8).map((subscriber) => <div key={subscriber.id}><span>{subscriber.email.slice(0, 1).toUpperCase()}</span><strong>{subscriber.email}</strong><small>{displayDate(subscriber.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}</small></div>)}{!subscribers.length && <small>No subscribers yet.</small>}</div></aside></div><div className="admin-panel admin-campaign-history"><p className="admin-kicker">Recent sends</p><h3>Past newsletters</h3>{campaigns.length ? campaigns.map((campaign) => <div className="admin-campaign-row" key={campaign.id}><span><strong>{campaign.subject}</strong><small>{displayDate(campaign.sent_at, { dateStyle: 'medium', timeStyle: 'short' })}</small></span><em>{campaign.recipient_count} recipients</em></div>) : <p className="admin-muted">Sent campaigns will appear here.</p>}</div></section>
   )
 }
 
