@@ -15,7 +15,7 @@ Use `npx vercel dev` instead of `npm run dev` when you need the local Vercel API
 
 ## Supabase and Resend setup
 
-1. Run [`supabase/schema.sql`](./supabase/schema.sql) in the Cedar Supabase project's SQL editor. This single SQL file contains the full schema and idempotent `ALTER TABLE` statements for existing projects, including the nullable `care_requests.whatsapp_number` column. It also creates the content image bucket; images are public to view and only the allowlisted admin can upload or update them.
+1. Run [`supabase/schema.sql`](./supabase/schema.sql) in the Cedar Supabase project's SQL editor. This single SQL file contains the full schema, idempotent table updates, and backfills for existing records, including the nullable `care_requests.whatsapp_number` column. It also creates the content image bucket; images are public to view and only the allowlisted admin can upload or update them.
 2. Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, and `SUPABASE_PUBLISHABLE_KEY`. Set `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, and `CARE_REQUEST_RECIPIENT` for admin newsletter sends and email notifications. `PUBLIC_SITE_URL` and `EMAIL_LOGO_URL` optionally override the defaults used in branded email footers.
 3. Keep the Supabase service role key and Resend key on the server. Do not add a `VITE_` prefix to either secret.
 4. Confirm the administrator's Supabase Auth user ID is `bb9a9a8e-83b6-4c7a-b101-dcfdfe9fd20c`. The console has no public sign-up flow; the UI, API, and RLS allow only this exact identity.
