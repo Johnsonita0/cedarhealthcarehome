@@ -40,39 +40,8 @@ create table if not exists public.caregiver_applications (
   full_name text not null,
   email text not null,
   phone text not null,
-  city text not null,
-  role text not null default 'Caregiver',
-  experience text not null,
-  availability text not null,
-  password text,
-  background_check boolean not null default false,
-  message text,
+  role text not null,
   status text not null default 'new',
-  approved_at timestamptz,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.caregiver_profiles (
-  id uuid primary key default gen_random_uuid(),
-  application_id uuid references public.caregiver_applications(id) on delete set null,
-  full_name text not null,
-  email text not null,
-  phone text not null,
-  city text,
-  role text not null default 'Caregiver',
-  status text not null default 'active',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists public.caregiver_client_assignments (
-  id uuid primary key default gen_random_uuid(),
-  caregiver_id uuid not null references public.caregiver_profiles(id) on delete cascade,
-  client_name text not null,
-  client_phone text,
-  care_type text not null,
-  notes text,
-  status text not null default 'assigned',
   created_at timestamptz not null default now()
 );
 
@@ -98,8 +67,6 @@ alter table public.newsletter_subscribers enable row level security;
 alter table public.testimonial_submissions enable row level security;
 alter table public.testimonials enable row level security;
 alter table public.caregiver_applications enable row level security;
-alter table public.caregiver_profiles enable row level security;
-alter table public.caregiver_client_assignments enable row level security;
 alter table public.site_content enable row level security;
 alter table public.newsletter_campaigns enable row level security;
 
@@ -118,36 +85,32 @@ alter table public.caregiver_applications
   add column if not exists full_name text,
   add column if not exists email text,
   add column if not exists phone text,
-  add column if not exists city text,
-  add column if not exists role text,
-  add column if not exists experience text,
-  add column if not exists availability text,
-  add column if not exists password text,
-  add column if not exists background_check boolean,
-  add column if not exists message text,
-  add column if not exists status text,
-  add column if not exists approved_at timestamptz,
-  add column if not exists created_at timestamptz;
-
-alter table public.caregiver_profiles
-  add column if not exists application_id uuid,
-  add column if not exists full_name text,
-  add column if not exists email text,
-  add column if not exists phone text,
-  add column if not exists city text,
   add column if not exists role text,
   add column if not exists status text,
-  add column if not exists created_at timestamptz,
-  add column if not exists updated_at timestamptz;
-
-alter table public.caregiver_client_assignments
-  add column if not exists caregiver_id uuid,
-  add column if not exists client_name text,
-  add column if not exists client_phone text,
-  add column if not exists care_type text,
-  add column if not exists notes text,
-  add column if not exists status text,
   add column if not exists created_at timestamptz;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'caregiver_applications' and column_name = 'city'
+  ) then
+    alter table public.caregiver_applications alter column city drop not null;
+  end if;
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'caregiver_applications' and column_name = 'experience'
+  ) then
+    alter table public.caregiver_applications alter column experience drop not null;
+  end if;
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'caregiver_applications' and column_name = 'availability'
+  ) then
+    alter table public.caregiver_applications alter column availability drop not null;
+  end if;
+end;
+$$;
 
 alter table public.site_content
   add column if not exists draft jsonb not null default '{}'::jsonb,
@@ -406,8 +369,6 @@ begin
         'testimonial_submissions',
         'testimonials',
         'caregiver_applications',
-        'caregiver_profiles',
-        'caregiver_client_assignments',
         'site_content',
         'newsletter_campaigns'
       )
@@ -442,14 +403,6 @@ create policy testimonials_admin_write on public.testimonials
 create policy caregiver_applications_insert on public.caregiver_applications
   for insert to anon, authenticated with check (true);
 create policy caregiver_applications_admin_access on public.caregiver_applications
-  for all to authenticated using (public.is_cedar_admin())
-  with check (public.is_cedar_admin());
-
-create policy caregiver_profiles_admin_access on public.caregiver_profiles
-  for all to authenticated using (public.is_cedar_admin())
-  with check (public.is_cedar_admin());
-
-create policy caregiver_assignments_admin_access on public.caregiver_client_assignments
   for all to authenticated using (public.is_cedar_admin())
   with check (public.is_cedar_admin());
 

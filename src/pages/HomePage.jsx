@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import AOS from 'aos'
 import 'aos/dist/aos.css'
-import { Brand, FormStatus, Icon, ModalSelect, PortalLink } from '../components/UI.jsx'
+import { Brand, FormStatus, Icon, PortalLink, SearchableSelect } from '../components/UI.jsx'
 import { defaultSiteContent } from '../data/adminDefaults.js'
 import { useToast } from '../components/ToastProvider.jsx'
 import { supabase } from '../supabaseClient.js'
@@ -494,10 +494,7 @@ function HomePage() {
           full_name: payload.full_name,
           email: payload.email,
           phone: payload.phone,
-          city: '',
           role: payload.role,
-          experience: '',
-          availability: '',
           status: 'new',
         })
         if (error) throw error
@@ -800,13 +797,12 @@ function HomePage() {
               <input id="caregiver-phone" type="tel" value={caregiverForm.phone} onChange={(event) => setCaregiverForm((current) => ({ ...current, phone: event.target.value }))} placeholder="+1 224 204 3281" maxLength="32" autoComplete="tel" inputMode="tel" required />
 
               <label htmlFor="caregiver-care-type">Which care service are you applying for? <span>*</span></label>
-              <ModalSelect
+              <SearchableSelect
                 id="caregiver-care-type"
-                label="Choose the care service you want to apply for"
                 value={caregiverForm.careType}
                 options={services.map((service) => ({ value: service.title, label: service.title }))}
                 onChange={(careType) => setCaregiverForm((current) => ({ ...current, careType }))}
-                placeholder="Select a care service"
+                placeholder="Search care services..."
               />
               <div className="contact-form__bottom">
                 <button className="button button--green" type="submit" disabled={caregiverSubmitting}>

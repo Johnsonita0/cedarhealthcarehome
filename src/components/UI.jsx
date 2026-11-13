@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useState } from 'react'
 import cedarLogo from '../images/logo/logo.jpeg'
 
 const clientAppUrl = import.meta.env.VITE_CLIENT_APP_URL
@@ -121,75 +121,6 @@ export function SearchableSelect({ id, value, options, onChange, placeholder = '
         </ul>
       )}
     </div>
-  )
-}
-
-export function ModalSelect({ id, label, value, options, onChange, placeholder = 'Choose an option' }) {
-  const dialogId = useId()
-  const [isOpen, setIsOpen] = useState(false)
-  const triggerRef = useRef(null)
-  const selectedOption = options.find((option) => option.value === value)
-
-  function closePicker() {
-    setIsOpen(false)
-    window.requestAnimationFrame(() => triggerRef.current?.focus())
-  }
-
-  useEffect(() => {
-    if (!isOpen) return undefined
-    const handleKeyDown = (event) => {
-      if (event.key !== 'Escape') return
-      setIsOpen(false)
-      window.requestAnimationFrame(() => triggerRef.current?.focus())
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen])
-
-  return (
-    <>
-      <button
-        ref={triggerRef}
-        id={id}
-        type="button"
-        className="modal-select__trigger"
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        aria-controls={dialogId}
-        onClick={() => setIsOpen(true)}
-      >
-        <span>{selectedOption?.label || placeholder}</span>
-        <span className="modal-select__chevron" aria-hidden="true">⌄</span>
-      </button>
-      {isOpen && (
-        <div className="modal-select__backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePicker() }}>
-          <section className="modal-select__dialog" id={dialogId} role="dialog" aria-modal="true" aria-labelledby={`${dialogId}-title`}>
-            <div className="modal-select__heading">
-              <h2 id={`${dialogId}-title`}>{label}</h2>
-              <button type="button" className="modal-select__close" aria-label="Close care options" onClick={closePicker}>
-                <Icon name="close" size={20} />
-              </button>
-            </div>
-            <div className="modal-select__options">
-              {options.map((option) => (
-                <button
-                  type="button"
-                  className={`modal-select__option${option.value === value ? ' is-selected' : ''}`}
-                  key={option.value}
-                  aria-pressed={option.value === value}
-                  onClick={() => {
-                    onChange(option.value)
-                    closePicker()
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </section>
-        </div>
-      )}
-    </>
   )
 }
 
