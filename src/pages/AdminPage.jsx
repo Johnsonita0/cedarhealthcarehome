@@ -14,6 +14,7 @@ const navigation = [
   { id: 'dashboard', label: 'Dashboard', icon: 'home' },
   { id: 'content', label: 'Page content', icon: 'leaf' },
   { id: 'enquiries', label: 'Enquiries', icon: 'mail' },
+  { id: 'caregivers', label: 'Caregivers', icon: 'people' },
   { id: 'testimonials', label: 'Testimonials', icon: 'quote' },
   { id: 'newsletter', label: 'Newsletter', icon: 'health' },
 ]
@@ -31,6 +32,9 @@ const emptyData = {
   testimonials: [],
   subscribers: [],
   campaigns: [],
+  caregiverApplications: [],
+  caregiverProfiles: [],
+  caregiverAssignments: [],
   siteContent: null,
 }
 const readNotificationStorageKey = 'cedar-admin-read-notifications'
@@ -175,15 +179,18 @@ function AdminPage() {
   async function loadData() {
     if (!supabase) return
     setDataLoading(true)
-    const [requests, submissions, testimonials, subscribers, campaigns, siteContent] = await Promise.all([
+    const [requests, submissions, testimonials, subscribers, campaigns, caregiverApplications, caregiverProfiles, caregiverAssignments, siteContent] = await Promise.all([
       supabase.from('care_requests').select('*').order('created_at', { ascending: false }),
       supabase.from('testimonial_submissions').select('*').order('created_at', { ascending: false }),
       supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
       supabase.from('newsletter_subscribers').select('*').order('created_at', { ascending: false }),
       supabase.from('newsletter_campaigns').select('*').order('sent_at', { ascending: false }).limit(10),
+      supabase.from('caregiver_applications').select('*').order('created_at', { ascending: false }),
+      supabase.from('caregiver_profiles').select('*').order('created_at', { ascending: false }),
+      supabase.from('caregiver_client_assignments').select('*').order('created_at', { ascending: false }),
       supabase.from('site_content').select('draft,published,updated_at,published_at').eq('id', 1).maybeSingle(),
     ])
-    const queryError = [requests, submissions, testimonials, subscribers, campaigns, siteContent]
+    const queryError = [requests, submissions, testimonials, subscribers, campaigns, caregiverApplications, caregiverProfiles, caregiverAssignments, siteContent]
       .find((result) => result.error)?.error
 
     if (queryError) {
@@ -195,6 +202,9 @@ function AdminPage() {
         testimonials: testimonials.data || [],
         subscribers: subscribers.data || [],
         campaigns: campaigns.data || [],
+        caregiverApplications: caregiverApplications.data || [],
+        caregiverProfiles: caregiverProfiles.data || [],
+        caregiverAssignments: caregiverAssignments.data || [],
         siteContent: siteContent.data,
       }
       setData(nextData)
@@ -419,6 +429,69 @@ function AdminPage() {
     else {
       notify(isPublished ? 'Testimonial published.' : 'Testimonial hidden from the public site.')
       await loadData()
+    }
+  }
+
+  async function updateCaregiverStatus(application, status) {
+    const { error } = await supabase.from('caregiver_applications').update({ status }).eq('id', application.id)
+    if (error) notify(error.message, 'error')
+    else {
+      notify(`Caregiver application marked as ${status}.`)
+      await loadData()
+    }
+  }
+
+  async function approveCaregiverApplication(application) {
+    const existingProfile = await supabase.from('caregiver_profiles').select('id').eq('application_id', application.id).maybeSingle()
+    if (existingProfile.error) {
+      notify(existingProfile.error.message, 'error')
+      return
+    }
+
+    if (!existingProfile.data) {
+      const { error: insertError } = await supabase.from('caregiver_profiles').insert({
+        application_id: application.id,
+        full_name: application.full_name,
+        email: application.email,
+        phone: application.phone,
+        city: application.city,
+        role: application.role || 'Caregiver',
+        status: 'active',
+      })
+      if (insertError) {
+        notify(insertError.message, 'error')
+        return
+      }
+    }
+
+    const { error } = await supabase.from('caregiver_applications').update({ status: 'approved' }).eq('id', application.id)
+    if (error) notify(error.message, 'error')
+    else {
+      notify('Caregiver application approved and added to the active team.')
+      await loadData()
+    }
+  }
+
+  async function assignClientToCaregiver(event, assignment) {
+    event.preventDefault()
+    if (!assignment.caregiverId || !assignment.clientName.trim() || !assignment.careType.trim()) {
+      notify('Choose a caregiver and provide the client name and care type.', 'warning')
+      return
+    }
+
+    const { error } = await supabase.from('caregiver_client_assignments').insert({
+      caregiver_id: assignment.caregiverId,
+      client_name: assignment.clientName.trim(),
+      client_phone: assignment.clientPhone.trim() || null,
+      care_type: assignment.careType.trim(),
+      notes: assignment.notes.trim() || null,
+      status: 'assigned',
+    })
+    if (error) notify(error.message, 'error')
+    else {
+      notify('Client assignment saved.')
+      await loadData()
+      event.currentTarget.reset()
     }
   }
 
@@ -664,6 +737,16 @@ function AdminPage() {
             onDelete={deleteRequest}
           />
         )}
+        {activeView === 'caregivers' && (
+          <CaregiverManagementView
+            applicants={data.caregiverApplications}
+            caregivers={data.caregiverProfiles}
+            assignments={data.caregiverAssignments}
+            onStatus={updateCaregiverStatus}
+            onApprove={approveCaregiverApplication}
+            onAssign={assignClientToCaregiver}
+          />
+        )}
         {activeView === 'testimonials' && (
           <ReviewsView
             filter={reviewFilter}
@@ -703,6 +786,7 @@ function AdminPage() {
           ['dashboard', 'Home', 'home'],
           ['content', 'Content', 'leaf'],
           ['enquiries', 'Inbox', 'mail'],
+          ['caregivers', 'Caregivers', 'people'],
           ['testimonials', 'Reviews', 'quote'],
           ['newsletter', 'Mail', 'health'],
         ].map(([id, label, icon]) => (
@@ -781,6 +865,147 @@ function NotificationsView({ notifications, unreadCount, loading, onMarkRead, on
           <p>{loading ? 'New activity will appear here.' : filter === 'unread' ? 'There are no unread updates.' : 'New care requests and signups will appear here.'}</p>
         </div>
       )}
+    </section>
+  )
+}
+
+function CaregiverManagementView({ applicants, caregivers, assignments, onStatus, onApprove, onAssign }) {
+  const [assignmentForm, setAssignmentForm] = useState({
+    caregiverId: '',
+    clientName: '',
+    clientPhone: '',
+    careType: 'Personal care',
+    notes: '',
+  })
+
+  return (
+    <section className="admin-workspace">
+      <div className="admin-page-heading">
+        <div>
+          <p className="admin-kicker">Team operations</p>
+          <h2>Caregiver pipeline</h2>
+          <p>Review applicants, approve caregivers, and assign clients to the right team member.</p>
+        </div>
+      </div>
+
+      <div className="admin-caregiver-grid">
+        <section className="admin-panel">
+          <div className="admin-panel__heading">
+            <div>
+              <p className="admin-kicker">Applications</p>
+              <h2>Open applicants</h2>
+            </div>
+            <span>{applicants.length}</span>
+          </div>
+
+          {applicants.length === 0 ? (
+            <div className="admin-empty-state"><h3>No applications yet</h3><p>Caregiver applications will appear here.</p></div>
+          ) : (
+            applicants.map((application) => (
+              <article className="admin-caregiver-card" key={application.id}>
+                <div className="admin-caregiver-card__top">
+                  <div>
+                    <strong>{application.full_name}</strong>
+                    <small>{application.city || 'Chicago'} • {application.role || 'Caregiver'}</small>
+                  </div>
+                  <select value={application.status || 'new'} onChange={(event) => onStatus(application, event.target.value)}>
+                    <option value="new">New</option>
+                    <option value="reviewing">Reviewing</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+                <p>{application.email} • {application.phone}</p>
+                <p><strong>Experience:</strong> {application.experience}</p>
+                <p><strong>Availability:</strong> {application.availability}</p>
+                {application.message && <p><strong>Note:</strong> {application.message}</p>}
+                <div className="admin-caregiver-card__actions">
+                  <button type="button" className="admin-primary-button" onClick={() => onApprove(application)} disabled={application.status === 'approved'}>
+                    {application.status === 'approved' ? 'Approved' : 'Approve caregiver'}
+                  </button>
+                </div>
+              </article>
+            ))
+          )}
+        </section>
+
+        <section className="admin-panel">
+          <div className="admin-panel__heading">
+            <div>
+              <p className="admin-kicker">Team</p>
+              <h2>Active caregivers</h2>
+            </div>
+            <span>{caregivers.length}</span>
+          </div>
+
+          {caregivers.length === 0 ? (
+            <div className="admin-empty-state"><h3>No active caregivers</h3><p>Approved applicants will appear here once they are added.</p></div>
+          ) : (
+            caregivers.map((caregiver) => {
+              const assignedClients = assignments.filter((item) => item.caregiver_id === caregiver.id)
+              return (
+                <article className="admin-caregiver-card" key={caregiver.id}>
+                  <div className="admin-caregiver-card__top">
+                    <div>
+                      <strong>{caregiver.full_name}</strong>
+                      <small>{caregiver.role || 'Caregiver'} • {caregiver.city || 'Chicago'}</small>
+                    </div>
+                    <span className={`admin-status-pill admin-status-pill--${caregiver.status || 'active'}`}>{caregiver.status || 'active'}</span>
+                  </div>
+                  <p>{caregiver.email} • {caregiver.phone}</p>
+                  <div className="admin-caregiver-card__list">
+                    <strong>Assigned clients:</strong>
+                    {assignedClients.length ? (
+                      <ul>
+                        {assignedClients.map((assignment) => (
+                          <li key={assignment.id}>{assignment.client_name} <em>({assignment.care_type})</em></li>
+                        ))}
+                      </ul>
+                    ) : <span>None yet</span>}
+                  </div>
+                </article>
+              )
+            })
+          )}
+        </section>
+      </div>
+
+      <section className="admin-panel admin-caregiver-assignments">
+        <div className="admin-panel__heading">
+          <div>
+            <p className="admin-kicker">Client placement</p>
+            <h2>Assign a client to a caregiver</h2>
+          </div>
+        </div>
+        <form className="admin-assignment-form" onSubmit={(event) => onAssign(event, assignmentForm)}>
+          <label>
+            Caregiver
+            <select value={assignmentForm.caregiverId} onChange={(event) => setAssignmentForm((current) => ({ ...current, caregiverId: event.target.value }))}>
+              <option value="">Select a caregiver</option>
+              {caregivers.map((caregiver) => (
+                <option key={caregiver.id} value={caregiver.id}>{caregiver.full_name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Client name
+            <input value={assignmentForm.clientName} onChange={(event) => setAssignmentForm((current) => ({ ...current, clientName: event.target.value }))} placeholder="Jane Doe" required />
+          </label>
+          <label>
+            Client phone
+            <input value={assignmentForm.clientPhone} onChange={(event) => setAssignmentForm((current) => ({ ...current, clientPhone: event.target.value }))} placeholder="(555) 555-1234" />
+          </label>
+          <label>
+            Care type
+            <input value={assignmentForm.careType} onChange={(event) => setAssignmentForm((current) => ({ ...current, careType: event.target.value }))} placeholder="Personal care" required />
+          </label>
+          <label>
+            Notes
+            <textarea value={assignmentForm.notes} onChange={(event) => setAssignmentForm((current) => ({ ...current, notes: event.target.value }))} rows="3" placeholder="Pickup instructions, care preferences, and any schedule notes." />
+          </label>
+          <button className="admin-primary-button" type="submit">Save assignment</button>
+        </form>
+      </section>
     </section>
   )
 }

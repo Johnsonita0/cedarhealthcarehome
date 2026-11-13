@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     console.error('Story submission email configuration is incomplete:', missingResend.join(', '))
     return sendJson(res, 200, { ok: true, notificationSent: false })
   }
-
+  
   const emailHtml = renderBrandedEmail({
     preheader: `A new testimonial from ${name} is waiting for review.`,
     title: 'A story is ready for review',

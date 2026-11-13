@@ -4,6 +4,7 @@ import 'aos/dist/aos.css'
 import { Brand, FormStatus, Icon, PortalLink } from '../components/UI.jsx'
 import { defaultSiteContent } from '../data/adminDefaults.js'
 import { useToast } from '../components/ToastProvider.jsx'
+import { supabase } from '../supabaseClient.js'
 
 const phoneNumber = '224-204-3281'
 const phoneLink = 'tel:+12242043281'
@@ -77,16 +78,16 @@ const heroSlideCandidates = [
     noteDescription: 'A little more peace of mind.',
   },
   {
-    image: 'https://images.pexels.com/photos/6129242/pexels-photo-6129242.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A caregiver comforting a client at home',
+    image: 'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1600&q=80',
+    alt: 'A healthcare professional in a face mask speaking with a patient',
     position: '55% 38%',
     mobilePosition: '30% 35%',
-    eyebrow: 'Care that feels like home',
-    title: <>More comfort.<br />More <em>good days.</em></>,
-    description: 'Thoughtful everyday support that protects your independence and makes room for what matters most.',
-    imageCaption: 'Everyday help, at home',
-    noteTitle: 'Comfort in familiar places.',
-    noteDescription: 'Care that fits your routine.',
+    eyebrow: 'Thoughtful care, close to home',
+    title: <>Feel safer<br />right at <em>home.</em></>,
+    description: 'We help make home a more comfortable place to live, heal, and stay connected.',
+    imageCaption: 'Thoughtful care, close to home',
+    noteTitle: 'Feel at ease at home.',
+    noteDescription: 'A little more peace of mind.',
   },
   {
     image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
@@ -321,6 +322,18 @@ function HomePage() {
   const [storiesError, setStoriesError] = useState(false)
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [siteContent, setSiteContent] = useState(null)
+  const [caregiverForm, setCaregiverForm] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    city: '',
+    role: 'Caregiver',
+    experience: '',
+    availability: '',
+    message: '',
+    backgroundCheck: false,
+  })
+  const [caregiverStatus, setCaregiverStatus] = useState(null)
 
   useEffect(() => {
     const root = document.documentElement
@@ -497,6 +510,68 @@ function HomePage() {
     }
   }
 
+  async function submitCaregiverApplication(event) {
+    event.preventDefault()
+    const payload = {
+      full_name: caregiverForm.fullName.trim(),
+      email: caregiverForm.email.trim(),
+      phone: caregiverForm.phone.trim(),
+      city: caregiverForm.city.trim(),
+      role: caregiverForm.role.trim() || 'Caregiver',
+      experience: caregiverForm.experience.trim(),
+      availability: caregiverForm.availability.trim(),
+      message: caregiverForm.message.trim(),
+      background_check: caregiverForm.backgroundCheck,
+      created_at: new Date().toISOString(),
+    }
+
+    if (!payload.full_name || !payload.email || !payload.phone || !payload.city || !payload.experience || !payload.availability) {
+      setCaregiverStatus({ type: 'error', message: 'Please complete all required fields before submitting your application.' })
+      return
+    }
+
+    try {
+      if (supabase) {
+        const { error } = await supabase.from('caregiver_applications').insert({
+          full_name: payload.full_name,
+          email: payload.email,
+          phone: payload.phone,
+          city: payload.city,
+          role: payload.role,
+          experience: payload.experience,
+          availability: payload.availability,
+          message: payload.message,
+          background_check: payload.background_check,
+          status: 'new',
+        })
+        if (error) throw error
+      } else {
+        const key = 'cedar-caregiver-applications'
+        const existing = JSON.parse(window.localStorage.getItem(key) || '[]')
+        existing.push(payload)
+        window.localStorage.setItem(key, JSON.stringify(existing))
+      }
+
+      setCaregiverStatus({ type: 'success', message: 'Thank you. Your caregiver application has been received and our team will review it soon.' })
+      setCaregiverForm({
+        fullName: '',
+        email: '',
+        phone: '',
+        city: '',
+        role: 'Caregiver',
+        experience: '',
+        availability: '',
+        message: '',
+        backgroundCheck: false,
+      })
+      event.currentTarget.reset()
+      showToast('Your caregiver application has been submitted.', 'success')
+    } catch (error) {
+      setCaregiverStatus({ type: 'error', message: error.message || 'We could not submit your application right now. Please try again.' })
+      showToast(error.message || 'We could not submit your application right now.', 'error')
+    }
+  }
+
   async function submitStory(event) {
     event.preventDefault()
     setStoryStatus({ type: 'loading', message: 'Sending your story…' })
@@ -531,6 +606,7 @@ function HomePage() {
   const navLinks = [
     ['Services', '#services'],
     ['Our story', '#about'],
+    ['Caregivers', '#caregivers'],
     ['Stories', '#stories'],
     ['FAQs', '#faq'],
     ['Contact', '#contact'],
@@ -604,6 +680,10 @@ function HomePage() {
                   <p className="eyebrow"><span className="eyebrow__line" /> {heroSlide.eyebrow}</p>
                   <h1>{heroSlide.title}</h1>
                   <p className="hero__intro">{heroSlide.description}</p>
+                  <div className="hero__badges" aria-label="Care standards and caregiver welcome">
+                    <span className="hero__badge">Licensed &amp; Insured</span>
+                    <span className="hero__badge hero__badge--ghost">Caregivers Welcome</span>
+                  </div>
                   <div className="hero__actions">
                     <a className="button button--green" href={heroSlide.primaryUrl || '#contact'}>{heroSlide.primaryLabel || 'Let’s talk about care'}</a>
                     <PortalLink className="button button--outline" label={heroSlide.secondaryLabel} url={heroSlide.secondaryUrl} />
@@ -745,6 +825,64 @@ function HomePage() {
                 </details>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="caregiver section-pad" id="caregivers">
+          <div className="container caregiver__grid">
+            <div className="caregiver__copy">
+              <p className="eyebrow eyebrow--light"><span className="eyebrow__line" /> Join our team</p>
+              <h2>Caregivers are welcome here.</h2>
+              <p>We are building a compassionate home care team that treats clients with respect, patience, and dignity. If you care deeply about helping people thrive at home, we would love to hear from you.</p>
+              <ul>
+                <li>Licensed &amp; insured home care agency</li>
+                <li>Supportive, professional team culture</li>
+                <li>Meaningful client relationships and flexible scheduling</li>
+              </ul>
+            </div>
+            <form className="caregiver-form" onSubmit={submitCaregiverApplication}>
+              <div className="contact-form__top"><span>Apply to join Cedar</span><span className="contact-form__required">* Required fields</span></div>
+              <label htmlFor="caregiver-name">Full name <span>*</span></label>
+              <input id="caregiver-name" value={caregiverForm.fullName} onChange={(event) => setCaregiverForm((current) => ({ ...current, fullName: event.target.value }))} placeholder="Your full name" maxLength="120" required />
+
+              <label htmlFor="caregiver-email">Email address <span>*</span></label>
+              <input id="caregiver-email" type="email" value={caregiverForm.email} onChange={(event) => setCaregiverForm((current) => ({ ...current, email: event.target.value }))} placeholder="you@example.com" maxLength="160" required />
+
+              <label htmlFor="caregiver-phone">Phone number <span>*</span></label>
+              <input id="caregiver-phone" type="tel" value={caregiverForm.phone} onChange={(event) => setCaregiverForm((current) => ({ ...current, phone: event.target.value }))} placeholder="(123) 456-7890" maxLength="32" required />
+
+              <label htmlFor="caregiver-city">City <span>*</span></label>
+              <input id="caregiver-city" value={caregiverForm.city} onChange={(event) => setCaregiverForm((current) => ({ ...current, city: event.target.value }))} placeholder="Chicago, IL" maxLength="80" required />
+
+              <label htmlFor="caregiver-role">Position</label>
+              <select id="caregiver-role" value={caregiverForm.role} onChange={(event) => setCaregiverForm((current) => ({ ...current, role: event.target.value }))}>
+                <option>Caregiver</option>
+                <option>Home Health Aide</option>
+                <option>Certified Nursing Assistant</option>
+                <option>Skilled Nurse</option>
+                <option>Companion</option>
+              </select>
+
+              <label htmlFor="caregiver-experience">Relevant experience <span>*</span></label>
+              <textarea id="caregiver-experience" rows="3" value={caregiverForm.experience} onChange={(event) => setCaregiverForm((current) => ({ ...current, experience: event.target.value }))} placeholder="Share your caregiving background, licensure, or experience in home support." maxLength="1500" required />
+
+              <label htmlFor="caregiver-availability">Availability <span>*</span></label>
+              <input id="caregiver-availability" value={caregiverForm.availability} onChange={(event) => setCaregiverForm((current) => ({ ...current, availability: event.target.value }))} placeholder="Full-time, weekends, evenings, etc." maxLength="120" required />
+
+              <label htmlFor="caregiver-message">Tell us about yourself</label>
+              <textarea id="caregiver-message" rows="3" value={caregiverForm.message} onChange={(event) => setCaregiverForm((current) => ({ ...current, message: event.target.value }))} placeholder="What matters to you about helping others at home?" maxLength="2000" />
+
+              <label className="caregiver-form__checkbox" htmlFor="caregiver-background-check">
+                <input id="caregiver-background-check" type="checkbox" checked={caregiverForm.backgroundCheck} onChange={(event) => setCaregiverForm((current) => ({ ...current, backgroundCheck: event.target.checked }))} />
+                <span>I understand Cedar may require a background check and can provide my credentials upon review.</span>
+              </label>
+
+              <div className="contact-form__bottom">
+                <button className="button button--green" type="submit">Apply now</button>
+                <span>We review applications with care and confidentiality.</span>
+              </div>
+              <FormStatus status={caregiverStatus} />
+            </form>
           </div>
         </section>
 

@@ -35,6 +35,45 @@ create table if not exists public.testimonials (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.caregiver_applications (
+  id uuid primary key default gen_random_uuid(),
+  full_name text not null,
+  email text not null,
+  phone text not null,
+  city text not null,
+  role text not null default 'Caregiver',
+  experience text not null,
+  availability text not null,
+  background_check boolean not null default false,
+  message text,
+  status text not null default 'new',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.caregiver_profiles (
+  id uuid primary key default gen_random_uuid(),
+  application_id uuid references public.caregiver_applications(id) on delete set null,
+  full_name text not null,
+  email text not null,
+  phone text not null,
+  city text,
+  role text not null default 'Caregiver',
+  status text not null default 'active',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.caregiver_client_assignments (
+  id uuid primary key default gen_random_uuid(),
+  caregiver_id uuid not null references public.caregiver_profiles(id) on delete cascade,
+  client_name text not null,
+  client_phone text,
+  care_type text not null,
+  notes text,
+  status text not null default 'assigned',
+  created_at timestamptz not null default now()
+);
+
 -- Editable CMS content and newsletter delivery history.
 create table if not exists public.site_content (
   id integer primary key default 1 check (id = 1),
@@ -56,6 +95,9 @@ alter table public.care_requests enable row level security;
 alter table public.newsletter_subscribers enable row level security;
 alter table public.testimonial_submissions enable row level security;
 alter table public.testimonials enable row level security;
+alter table public.caregiver_applications enable row level security;
+alter table public.caregiver_profiles enable row level security;
+alter table public.caregiver_client_assignments enable row level security;
 alter table public.site_content enable row level security;
 alter table public.newsletter_campaigns enable row level security;
 
@@ -69,6 +111,39 @@ alter table public.testimonials
   add column if not exists rating smallint not null default 5,
   add column if not exists location text,
   add column if not exists is_published boolean not null default false;
+
+alter table public.caregiver_applications
+  add column if not exists full_name text,
+  add column if not exists email text,
+  add column if not exists phone text,
+  add column if not exists city text,
+  add column if not exists role text,
+  add column if not exists experience text,
+  add column if not exists availability text,
+  add column if not exists background_check boolean,
+  add column if not exists message text,
+  add column if not exists status text,
+  add column if not exists created_at timestamptz;
+
+alter table public.caregiver_profiles
+  add column if not exists application_id uuid,
+  add column if not exists full_name text,
+  add column if not exists email text,
+  add column if not exists phone text,
+  add column if not exists city text,
+  add column if not exists role text,
+  add column if not exists status text,
+  add column if not exists created_at timestamptz,
+  add column if not exists updated_at timestamptz;
+
+alter table public.caregiver_client_assignments
+  add column if not exists caregiver_id uuid,
+  add column if not exists client_name text,
+  add column if not exists client_phone text,
+  add column if not exists care_type text,
+  add column if not exists notes text,
+  add column if not exists status text,
+  add column if not exists created_at timestamptz;
 
 alter table public.site_content
   add column if not exists draft jsonb not null default '{}'::jsonb,
@@ -326,6 +401,9 @@ begin
         'newsletter_subscribers',
         'testimonial_submissions',
         'testimonials',
+        'caregiver_applications',
+        'caregiver_profiles',
+        'caregiver_client_assignments',
         'site_content',
         'newsletter_campaigns'
       )
@@ -354,6 +432,20 @@ create policy testimonial_submissions_admin_access on public.testimonial_submiss
 create policy testimonials_public_read on public.testimonials
   for select to anon, authenticated using (is_published = true or public.is_cedar_admin());
 create policy testimonials_admin_write on public.testimonials
+  for all to authenticated using (public.is_cedar_admin())
+  with check (public.is_cedar_admin());
+
+create policy caregiver_applications_insert on public.caregiver_applications
+  for insert to anon, authenticated with check (true);
+create policy caregiver_applications_admin_access on public.caregiver_applications
+  for all to authenticated using (public.is_cedar_admin())
+  with check (public.is_cedar_admin());
+
+create policy caregiver_profiles_admin_access on public.caregiver_profiles
+  for all to authenticated using (public.is_cedar_admin())
+  with check (public.is_cedar_admin());
+
+create policy caregiver_assignments_admin_access on public.caregiver_client_assignments
   for all to authenticated using (public.is_cedar_admin())
   with check (public.is_cedar_admin());
 
