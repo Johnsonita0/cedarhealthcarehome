@@ -91,6 +91,7 @@ body { color: var(--ink); background: #f7f9f5; }
 .caregiver-success .eyebrow { margin: 0; color: #39704a; }
 .caregiver-success h3 { margin: 0; color: #1d5b35; font-size: 25px; }
 .caregiver-success__message, .caregiver-success__email { margin: 0; color: #4f6858; font-size: 13px; line-height: 1.65; }
+.caregiver-success__email-code { margin: -8px 0 0; color: #718077; font-size: 11px; line-height: 1.5; }
 .caregiver-success dl { display: grid; gap: 8px; margin: 2px 0; padding: 15px; border: 1px solid #e0ebe2; border-radius: 10px; background: #fff; }
 .caregiver-success dl > div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; }
 .caregiver-success dt { color: #63776a; font-size: 12px; font-weight: 600; }

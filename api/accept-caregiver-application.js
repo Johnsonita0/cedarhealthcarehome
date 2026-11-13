@@ -75,11 +75,6 @@ export default async function handler(req, res) {
     }
 
     const verifyUrl = `${getPublicSiteUrl()}/verify?reference=${encodeURIComponent(referenceCode)}`
-    const applicationPronouns = application.gender === 'Male'
-      ? 'He/him'
-      : application.gender === 'Female'
-        ? 'She/her'
-        : 'Not specified'
     const emailSent = await sendEmail(resend, {
       to: application.email,
       subject: 'Your Cedar caregiver application was accepted',
@@ -87,7 +82,7 @@ export default async function handler(req, res) {
         preheader: 'There is an update to your Cedar caregiver application.',
         title: 'Your application was accepted',
         intro: `Hello ${application.full_name}, we are pleased to let you know that your application to join Cedar Healthcare was accepted.`,
-        content: `<p style="margin:0;color:#405548;font-size:14px;line-height:1.75">Care service: <strong>${escapeHtml(application.role)}</strong></p><p style="margin:12px 0 0;color:#405548;font-size:14px;line-height:1.75">Gender: <strong>${escapeHtml(application.gender || 'Not specified')}</strong> · Pronouns: <strong>${applicationPronouns}</strong></p><p style="margin:14px 0 0;color:#405548;font-size:14px;line-height:1.75">You can use your reference number on the status page to review this update.</p><p style="margin:12px 0 0;color:#405548;font-size:13px;line-height:1.75">Reference: <strong>${escapeHtml(referenceCode)}</strong></p>`,
+        content: `<p style="margin:0;color:#405548;font-size:14px;line-height:1.75">Care service: <strong>${escapeHtml(application.role)}</strong></p><p style="margin:12px 0 0;color:#405548;font-size:14px;line-height:1.75">Gender: <strong>${escapeHtml(application.gender || 'Not specified')}</strong></p><p style="margin:14px 0 0;color:#405548;font-size:14px;line-height:1.75">You can use your reference number on the status page to review this update.</p><p style="margin:12px 0 0;color:#405548;font-size:13px;line-height:1.75">Reference: <strong>${escapeHtml(referenceCode)}</strong></p>`,
         button: { url: verifyUrl, label: 'Check application status' },
       }),
     })

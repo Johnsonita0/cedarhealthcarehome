@@ -518,6 +518,7 @@ function HomePage() {
           referenceCode: result.referenceCode,
           confirmationEmailSent: result.confirmationEmailSent,
           adminNotificationSent: result.adminNotificationSent,
+          emailFailures: result.emailFailures || {},
         })
         setCaregiverStatus(null)
       } else {
@@ -806,27 +807,37 @@ function HomePage() {
               <section className="caregiver-form caregiver-success" aria-labelledby="caregiver-success-title">
                 <p className="eyebrow"><span className="eyebrow__line" /> Submission complete</p>
                 <h3 id="caregiver-success-title">Thank you, {caregiverReceipt.fullName}</h3>
-                <p className="caregiver-success__message">Your caregiver application has been successfully submitted.</p>
+                <p className="caregiver-success__message">
+                  {caregiverReceipt.confirmationEmailSent
+                    ? `Your caregiver application has been received. A confirmation email was sent to ${caregiverReceipt.email} with a link to verify your application status.`
+                    : `Your caregiver application has been received, but we could not send the confirmation email to ${caregiverReceipt.email}. Keep your reference and contact Cedar if you need help.`}
+                </p>
+                {!caregiverReceipt.confirmationEmailSent && caregiverReceipt.emailFailures.confirmation && (
+                  <p className="caregiver-success__email-code">
+                    Email status: {caregiverReceipt.emailFailures.confirmation.code}
+                    {caregiverReceipt.emailFailures.confirmation.status ? ` (HTTP ${caregiverReceipt.emailFailures.confirmation.status})` : ''}
+                  </p>
+                )}
                 <dl>
                   <div><dt>Full name</dt><dd>{caregiverReceipt.fullName}</dd></div>
                   <div><dt>Email</dt><dd>{caregiverReceipt.email}</dd></div>
                   <div><dt>WhatsApp</dt><dd>{caregiverReceipt.phone}</dd></div>
                   <div><dt>Gender</dt><dd>{caregiverReceipt.gender}</dd></div>
-                  <div><dt>Pronouns</dt><dd>{caregiverReceipt.gender === 'Male' ? 'He/him' : 'She/her'}</dd></div>
                   <div><dt>Care service</dt><dd>{caregiverReceipt.role}</dd></div>
                   <div><dt>Reference</dt><dd><code>{caregiverReceipt.referenceCode}</code></dd></div>
                 </dl>
                 <a className="button button--green" href={`/verify?reference=${encodeURIComponent(caregiverReceipt.referenceCode)}`}>Verify application status</a>
                 <p className="caregiver-success__email">
-                  {caregiverReceipt.confirmationEmailSent
-                    ? `A confirmation email was sent to ${caregiverReceipt.email} with a link to verify your application status.`
-                    : `Your application was saved, but we could not send the confirmation email to ${caregiverReceipt.email}. Keep your reference and contact Cedar if you need help.`}
-                </p>
-                <p className="caregiver-success__email">
                   {caregiverReceipt.adminNotificationSent
                     ? 'Cedar’s team has also been notified by email.'
                     : 'Cedar’s team could not be notified by email. Please contact us so we can follow up.'}
                 </p>
+                {!caregiverReceipt.adminNotificationSent && caregiverReceipt.emailFailures.adminNotification && (
+                  <p className="caregiver-success__email-code">
+                    Admin notification status: {caregiverReceipt.emailFailures.adminNotification.code}
+                    {caregiverReceipt.emailFailures.adminNotification.status ? ` (HTTP ${caregiverReceipt.emailFailures.adminNotification.status})` : ''}
+                  </p>
+                )}
                 <button className="button button--outline" type="button" onClick={() => setCaregiverReceipt(null)}>Return to form</button>
               </section>
             ) : (

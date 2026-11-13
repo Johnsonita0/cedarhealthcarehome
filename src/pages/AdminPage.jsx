@@ -983,7 +983,6 @@ function CaregiverManagementView({ applicants, onStatus, onDelete }) {
                       <p><Icon name="mail" size={16} /><a href={`mailto:${application.email}`}>{application.email}</a></p>
                       <p><Icon name="whatsapp" size={16} />{application.phone}</p>
                       <p><Icon name="user" size={16} />Gender: {application.gender || 'Not specified'}</p>
-                      <p><Icon name="user" size={16} />Pronouns: {application.gender === 'Male' ? 'He/him' : application.gender === 'Female' ? 'She/her' : 'Not specified'}</p>
                       <p><Icon name="clock" size={16} />Reference {application.reference_code}</p>
                       <p><Icon name="clock" size={16} />Applied {displayDate(application.created_at, { dateStyle: 'medium' })}</p>
                     </div>

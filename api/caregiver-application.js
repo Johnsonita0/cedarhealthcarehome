@@ -16,7 +16,6 @@ function applicationDetails({ fullName, email, phone, gender, role, referenceCod
     ['Email', email],
     ['WhatsApp', phone],
     ['Gender', gender],
-    ['Pronouns', gender === 'Male' ? 'He/him' : 'She/her'],
     ['Care service', role],
     ['Reference', referenceCode],
   ]
@@ -76,16 +75,21 @@ export default async function handler(req, res) {
   const verifyUrl = `${siteUrl}/verify?reference=${encodeURIComponent(referenceCode)}`
   const { config: resend, missing: missingResend } = getResendConfig()
   let adminRecipients = []
+  const emailFailures = {}
   try {
     adminRecipients = getCareRequestRecipients(resend)
   } catch (error) {
     console.error('Caregiver admin email recipients are invalid:', error)
+    emailFailures.adminNotification = { code: 'invalid_recipient_configuration' }
   }
   let confirmationEmailSent = false
   let adminNotificationSent = false
 
   if (missingResend.length) {
     console.error('Caregiver email configuration is incomplete:', missingResend.join(', '))
+    const configurationFailure = { code: 'configuration_incomplete', missing: missingResend }
+    emailFailures.confirmation = configurationFailure
+    emailFailures.adminNotification = configurationFailure
   }
   if (!missingResend.length) {
     const applicantEmail = sendEmail(resend, {
@@ -98,6 +102,7 @@ export default async function handler(req, res) {
         content: `${applicationDetails({ fullName, email, phone, gender, role, referenceCode })}<p style="margin:18px 0 0;color:#405548;font-size:14px;line-height:1.75">Keep your reference number. You can use it at any time to check your application status.</p>`,
         button: { url: verifyUrl, label: 'Check application status' },
       }),
+      onFailure: (failure) => { emailFailures.confirmation = failure },
     })
 
     const adminEmail = adminRecipients.length
@@ -112,6 +117,7 @@ export default async function handler(req, res) {
           button: { url: `${siteUrl}/admin`, label: 'Open caregiver applications' },
         }),
         replyTo: email,
+        onFailure: (failure) => { emailFailures.adminNotification = failure },
       }) : Promise.resolve(false)
     const sentEmails = await Promise.all([applicantEmail, adminEmail])
     confirmationEmailSent = sentEmails[0]
@@ -123,5 +129,6 @@ export default async function handler(req, res) {
     referenceCode,
     confirmationEmailSent,
     adminNotificationSent,
+    ...(Object.keys(emailFailures).length ? { emailFailures } : {}),
   })
 }

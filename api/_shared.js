@@ -200,7 +200,17 @@ export async function insertRow(config, table, row, { query = '', prefer = 'retu
   }
 }
 
-export async function sendEmail(config, { to, subject, html, replyTo }) {
+function resendFailureCode(detail) {
+  try {
+    const body = JSON.parse(detail)
+    const code = body.name || body.code
+    return typeof code === 'string' && /^[A-Za-z0-9_-]+$/.test(code) ? code : 'provider_rejected'
+  } catch {
+    return 'provider_rejected'
+  }
+}
+
+export async function sendEmail(config, { to, subject, html, replyTo, onFailure }) {
   try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -219,11 +229,13 @@ export async function sendEmail(config, { to, subject, html, replyTo }) {
     if (!response.ok) {
       const detail = await response.text()
       console.error('Resend email delivery failed:', response.status, detail)
+      if (onFailure) onFailure({ code: resendFailureCode(detail), status: response.status })
       return false
     }
     return true
   } catch (error) {
     console.error('Resend email delivery failed:', error)
+    if (onFailure) onFailure({ code: 'network_error' })
     return false
   }
 }
