@@ -180,8 +180,8 @@ const heroSlideCandidates = [
     noteDescription: 'Everyday help at home.',
   },
   {
-    image: 'https://images.pexels.com/photos/18459193/pexels-photo-18459193.jpeg?auto=compress&cs=tinysrgb&w=1400',
-    alt: 'A caregiver serving tea to an older woman at home',
+    image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A caregiver sharing a reassuring moment with an older adult',
     position: '54% 44%',
     mobilePosition: '49% 38%',
     eyebrow: 'Professional care, human connection',
@@ -293,7 +293,7 @@ const everydayCareMoments = [
     alt: 'A care professional speaking with clients around a table',
   },
   {
-    title: 'Wellness support at home',
+    title: 'Reassuring support at home',
     image: 'https://images.pexels.com/photos/6129242/pexels-photo-6129242.jpeg?auto=compress&cs=tinysrgb&w=1600',
     alt: 'A caregiver comforting a client at home',
   },
@@ -682,10 +682,6 @@ function HomePage() {
                   <p className="eyebrow"><span className="eyebrow__line" /> {heroSlide.eyebrow}</p>
                   <h1>{heroSlide.title}</h1>
                   <p className="hero__intro">{heroSlide.description}</p>
-                  <div className="hero__badges" aria-label="Care standards and caregiver welcome">
-                    <span className="hero__badge">Licensed &amp; Insured</span>
-                    <span className="hero__badge hero__badge--ghost">Caregivers Welcome</span>
-                  </div>
                   <div className="hero__actions">
                     <a className="button button--green" href={heroSlide.primaryUrl || '#contact'}>{heroSlide.primaryLabel || 'Let’s talk about care'}</a>
                     <PortalLink className="button button--outline" label={heroSlide.secondaryLabel} url={heroSlide.secondaryUrl} />

@@ -58,9 +58,7 @@ body { color: var(--ink); background: #f7f9f5; }
 .hero h1 em { color: #f3d54b; }
 .hero__copy .eyebrow { color: #fff; text-shadow: 0 1px 5px rgba(0,0,0,.4); }
 .hero__intro { max-width: 440px; margin: 20px 0 12px; color: rgba(255,255,255,.94); font-size: 14px; line-height: 1.8; text-shadow: 0 1px 7px rgba(0,0,0,.35); }
-.hero__badges { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 22px; }
-.hero__badge { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; padding: 7px 12px; border: 1px solid rgba(255,255,255,.45); border-radius: 999px; background: rgba(255,255,255,.08); color: #fff; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; backdrop-filter: blur(6px); }
-.hero__badge--ghost { background: rgba(12, 55, 20, .18); }
+
 .hero__actions { gap: 12px; }
 .hero__actions .button--green { border-color: #f1ce32; color: #153c08; background: #f1ce32; box-shadow: 0 3px 12px rgba(0,0,0,.16); }
 .caregiver { background: linear-gradient(180deg, #f7f9f5 0%, #edf4ef 100%); }
