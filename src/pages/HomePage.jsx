@@ -66,30 +66,6 @@ const heroSlideCandidates = [
     noteDescription: 'Here when it matters.',
   },
   {
-    image: 'https://images.pexels.com/photos/6129106/pexels-photo-6129106.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A clinician speaking with a client while holding a clipboard',
-    position: '58% 30%',
-    mobilePosition: '60% 28%',
-    eyebrow: 'Thoughtful care, close to home',
-    title: <>Feel safer<br />right at <em>home.</em></>,
-    description: 'We help make home a more comfortable place to live, heal, and stay connected.',
-    imageCaption: 'Thoughtful care, close to home',
-    noteTitle: 'Feel at ease at home.',
-    noteDescription: 'A little more peace of mind.',
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1600&q=80',
-    alt: 'A healthcare professional in a face mask speaking with a patient',
-    position: '55% 38%',
-    mobilePosition: '30% 35%',
-    eyebrow: 'Thoughtful care, close to home',
-    title: <>Feel safer<br />right at <em>home.</em></>,
-    description: 'We help make home a more comfortable place to live, heal, and stay connected.',
-    imageCaption: 'Thoughtful care, close to home',
-    noteTitle: 'Feel at ease at home.',
-    noteDescription: 'A little more peace of mind.',
-  },
-  {
     image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
     alt: 'A caregiver sharing a reassuring moment with an older adult',
     position: '52% 40%',
@@ -100,18 +76,6 @@ const heroSlideCandidates = [
     imageCaption: 'Care made personal',
     noteTitle: 'Attentive, everyday care.',
     noteDescription: 'Support for your daily needs.',
-  },
-  {
-    image: 'https://images.pexels.com/photos/7446778/pexels-photo-7446778.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A care professional speaking with clients around a table',
-    position: '50% 38%',
-    mobilePosition: '50% 35%',
-    eyebrow: 'A team you can count on',
-    title: <>A little help.<br />A lot more <em>peace.</em></>,
-    description: 'Get the right support for your family, with a care team that listens and follows through.',
-    imageCaption: 'A caring team by your side',
-    noteTitle: 'People who listen.',
-    noteDescription: 'Your needs come first.',
   },
   {
     image: 'https://images.pexels.com/photos/6129242/pexels-photo-6129242.jpeg?auto=compress&cs=tinysrgb&w=1600',
@@ -330,10 +294,57 @@ function HomePage() {
     role: 'Caregiver',
     experience: '',
     availability: '',
+    password: '',
+    confirmPassword: '',
     message: '',
     backgroundCheck: false,
   })
+  const [caregiverStep, setCaregiverStep] = useState(1)
   const [caregiverStatus, setCaregiverStatus] = useState(null)
+
+  const caregiverStepTitles = [
+    'Your details',
+    'Your experience',
+    'Availability and login',
+  ]
+
+  function getCaregiverStepFields(step) {
+    if (step === 1) return ['fullName', 'email', 'phone', 'city']
+    if (step === 2) return ['experience']
+    return ['availability', 'password', 'confirmPassword']
+  }
+
+  function validateCaregiverStep(step) {
+    const values = getCaregiverStepFields(step)
+    for (const field of values) {
+      if (!String(caregiverForm[field]).trim()) return false
+    }
+
+    if (step === 3) {
+      if (caregiverForm.password.length < 8) return false
+      if (caregiverForm.password !== caregiverForm.confirmPassword) return false
+    }
+
+    return true
+  }
+
+  function advanceCaregiverStep() {
+    if (!validateCaregiverStep(caregiverStep)) {
+      const message = caregiverStep === 3
+        ? 'Please add a valid password and confirm it matches before continuing.'
+        : 'Please complete all required fields in this step before continuing.'
+      setCaregiverStatus({ type: 'error', message })
+      return
+    }
+
+    setCaregiverStatus(null)
+    setCaregiverStep((currentStep) => Math.min(currentStep + 1, 3))
+  }
+
+  function goBackCaregiverStep() {
+    setCaregiverStatus(null)
+    setCaregiverStep((currentStep) => Math.max(currentStep - 1, 1))
+  }
 
   useEffect(() => {
     const root = document.documentElement
@@ -512,6 +523,12 @@ function HomePage() {
 
   async function submitCaregiverApplication(event) {
     event.preventDefault()
+
+    if (!validateCaregiverStep(1) || !validateCaregiverStep(2) || !validateCaregiverStep(3)) {
+      setCaregiverStatus({ type: 'error', message: 'Please complete all required fields before submitting your application.' })
+      return
+    }
+
     const payload = {
       full_name: caregiverForm.fullName.trim(),
       email: caregiverForm.email.trim(),
@@ -520,13 +537,14 @@ function HomePage() {
       role: caregiverForm.role.trim() || 'Caregiver',
       experience: caregiverForm.experience.trim(),
       availability: caregiverForm.availability.trim(),
+      password: caregiverForm.password,
       message: caregiverForm.message.trim(),
       background_check: caregiverForm.backgroundCheck,
       created_at: new Date().toISOString(),
     }
 
-    if (!payload.full_name || !payload.email || !payload.phone || !payload.city || !payload.experience || !payload.availability) {
-      setCaregiverStatus({ type: 'error', message: 'Please complete all required fields before submitting your application.' })
+    if (payload.password.length < 8 || payload.password !== caregiverForm.confirmPassword) {
+      setCaregiverStatus({ type: 'error', message: 'Create a password with at least 8 characters and confirm it matches.' })
       return
     }
 
@@ -540,6 +558,7 @@ function HomePage() {
           role: payload.role,
           experience: payload.experience,
           availability: payload.availability,
+          password: payload.password,
           message: payload.message,
           background_check: payload.background_check,
           status: 'new',
@@ -552,7 +571,8 @@ function HomePage() {
         window.localStorage.setItem(key, JSON.stringify(existing))
       }
 
-      setCaregiverStatus({ type: 'success', message: 'Thank you. Your caregiver application has been received and our team will review it soon.' })
+      setCaregiverStatus({ type: 'success', message: 'Thank you. Your caregiver application has been received. We will create your dashboard access once it is approved by the Cedar team.' })
+      setCaregiverStep(1)
       setCaregiverForm({
         fullName: '',
         email: '',
@@ -561,6 +581,8 @@ function HomePage() {
         role: 'Caregiver',
         experience: '',
         availability: '',
+        password: '',
+        confirmPassword: '',
         message: '',
         backgroundCheck: false,
       })
@@ -841,44 +863,83 @@ function HomePage() {
               </ul>
             </div>
             <form className="caregiver-form" onSubmit={submitCaregiverApplication}>
-              <div className="contact-form__top"><span>Apply to join Cedar</span><span className="contact-form__required">* Required fields</span></div>
-              <label htmlFor="caregiver-name">Full name <span>*</span></label>
-              <input id="caregiver-name" value={caregiverForm.fullName} onChange={(event) => setCaregiverForm((current) => ({ ...current, fullName: event.target.value }))} placeholder="Your full name" maxLength="120" required />
+              <div className="contact-form__top">
+                <span>Apply to join Cedar</span>
+                <span className="contact-form__required">Step {caregiverStep} of 3</span>
+              </div>
 
-              <label htmlFor="caregiver-email">Email address <span>*</span></label>
-              <input id="caregiver-email" type="email" value={caregiverForm.email} onChange={(event) => setCaregiverForm((current) => ({ ...current, email: event.target.value }))} placeholder="you@example.com" maxLength="160" required />
+              <div className="caregiver-form__progress" aria-label="Application progress">
+                {caregiverStepTitles.map((title, index) => (
+                  <div key={title} className={`caregiver-form__step${caregiverStep === index + 1 ? ' is-active' : ''}${caregiverStep > index + 1 ? ' is-complete' : ''}`}>
+                    <span>{index + 1}</span>
+                    <small>{title}</small>
+                  </div>
+                ))}
+              </div>
 
-              <label htmlFor="caregiver-phone">Phone number <span>*</span></label>
-              <input id="caregiver-phone" type="tel" value={caregiverForm.phone} onChange={(event) => setCaregiverForm((current) => ({ ...current, phone: event.target.value }))} placeholder="(123) 456-7890" maxLength="32" required />
+              {caregiverStep === 1 && (
+                <>
+                  <label htmlFor="caregiver-name">Full name <span>*</span></label>
+                  <input id="caregiver-name" value={caregiverForm.fullName} onChange={(event) => setCaregiverForm((current) => ({ ...current, fullName: event.target.value }))} placeholder="Your full name" maxLength="120" required />
 
-              <label htmlFor="caregiver-city">City <span>*</span></label>
-              <input id="caregiver-city" value={caregiverForm.city} onChange={(event) => setCaregiverForm((current) => ({ ...current, city: event.target.value }))} placeholder="Chicago, IL" maxLength="80" required />
+                  <label htmlFor="caregiver-email">Email address <span>*</span></label>
+                  <input id="caregiver-email" type="email" value={caregiverForm.email} onChange={(event) => setCaregiverForm((current) => ({ ...current, email: event.target.value }))} placeholder="you@example.com" maxLength="160" required />
 
-              <label htmlFor="caregiver-role">Position</label>
-              <select id="caregiver-role" value={caregiverForm.role} onChange={(event) => setCaregiverForm((current) => ({ ...current, role: event.target.value }))}>
-                <option>Caregiver</option>
-                <option>Home Health Aide</option>
-                <option>Certified Nursing Assistant</option>
-                <option>Skilled Nurse</option>
-                <option>Companion</option>
-              </select>
+                  <label htmlFor="caregiver-phone">Phone number <span>*</span></label>
+                  <input id="caregiver-phone" type="tel" value={caregiverForm.phone} onChange={(event) => setCaregiverForm((current) => ({ ...current, phone: event.target.value }))} placeholder="(123) 456-7890" maxLength="32" required />
 
-              <label htmlFor="caregiver-experience">Relevant experience <span>*</span></label>
-              <textarea id="caregiver-experience" rows="3" value={caregiverForm.experience} onChange={(event) => setCaregiverForm((current) => ({ ...current, experience: event.target.value }))} placeholder="Share your caregiving background, licensure, or experience in home support." maxLength="1500" required />
+                  <label htmlFor="caregiver-city">City <span>*</span></label>
+                  <input id="caregiver-city" value={caregiverForm.city} onChange={(event) => setCaregiverForm((current) => ({ ...current, city: event.target.value }))} placeholder="Chicago, IL" maxLength="80" required />
+                </>
+              )}
 
-              <label htmlFor="caregiver-availability">Availability <span>*</span></label>
-              <input id="caregiver-availability" value={caregiverForm.availability} onChange={(event) => setCaregiverForm((current) => ({ ...current, availability: event.target.value }))} placeholder="Full-time, weekends, evenings, etc." maxLength="120" required />
+              {caregiverStep === 2 && (
+                <>
+                  <label htmlFor="caregiver-role">Position</label>
+                  <select id="caregiver-role" value={caregiverForm.role} onChange={(event) => setCaregiverForm((current) => ({ ...current, role: event.target.value }))}>
+                    <option>Caregiver</option>
+                    <option>Home Health Aide</option>
+                    <option>Certified Nursing Assistant</option>
+                    <option>Skilled Nurse</option>
+                    <option>Companion</option>
+                  </select>
 
-              <label htmlFor="caregiver-message">Tell us about yourself</label>
-              <textarea id="caregiver-message" rows="3" value={caregiverForm.message} onChange={(event) => setCaregiverForm((current) => ({ ...current, message: event.target.value }))} placeholder="What matters to you about helping others at home?" maxLength="2000" />
+                  <label htmlFor="caregiver-experience">Relevant experience <span>*</span></label>
+                  <textarea id="caregiver-experience" rows="4" value={caregiverForm.experience} onChange={(event) => setCaregiverForm((current) => ({ ...current, experience: event.target.value }))} placeholder="Share your caregiving background, licensure, or experience in home support." maxLength="1500" required />
+                </>
+              )}
 
-              <label className="caregiver-form__checkbox" htmlFor="caregiver-background-check">
-                <input id="caregiver-background-check" type="checkbox" checked={caregiverForm.backgroundCheck} onChange={(event) => setCaregiverForm((current) => ({ ...current, backgroundCheck: event.target.checked }))} />
-                <span>I understand Cedar may require a background check and can provide my credentials upon review.</span>
-              </label>
+              {caregiverStep === 3 && (
+                <>
+                  <label htmlFor="caregiver-availability">Availability <span>*</span></label>
+                  <input id="caregiver-availability" value={caregiverForm.availability} onChange={(event) => setCaregiverForm((current) => ({ ...current, availability: event.target.value }))} placeholder="Full-time, weekends, evenings, etc." maxLength="120" required />
+
+                  <label htmlFor="caregiver-password">Create a dashboard password <span>*</span></label>
+                  <input id="caregiver-password" type="password" value={caregiverForm.password} onChange={(event) => setCaregiverForm((current) => ({ ...current, password: event.target.value }))} placeholder="Create a password with at least 8 characters" minLength="8" maxLength="128" required />
+
+                  <label htmlFor="caregiver-confirm-password">Confirm password <span>*</span></label>
+                  <input id="caregiver-confirm-password" type="password" value={caregiverForm.confirmPassword} onChange={(event) => setCaregiverForm((current) => ({ ...current, confirmPassword: event.target.value }))} placeholder="Re-enter your password" minLength="8" maxLength="128" required />
+
+                  <label htmlFor="caregiver-message">Tell us about yourself</label>
+                  <textarea id="caregiver-message" rows="4" value={caregiverForm.message} onChange={(event) => setCaregiverForm((current) => ({ ...current, message: event.target.value }))} placeholder="What matters to you about helping others at home?" maxLength="2000" />
+
+                  <label className="caregiver-form__checkbox" htmlFor="caregiver-background-check">
+                    <input id="caregiver-background-check" type="checkbox" checked={caregiverForm.backgroundCheck} onChange={(event) => setCaregiverForm((current) => ({ ...current, backgroundCheck: event.target.checked }))} />
+                    <span>I understand Cedar may require a background check and can provide my credentials upon review.</span>
+                  </label>
+                </>
+              )}
 
               <div className="contact-form__bottom">
-                <button className="button button--green" type="submit">Apply now</button>
+                {caregiverStep > 1 && (
+                  <button type="button" className="button button--outline" onClick={goBackCaregiverStep}>Back</button>
+                )}
+
+                {caregiverStep < 3 ? (
+                  <button type="button" className="button button--green" onClick={advanceCaregiverStep}>Continue</button>
+                ) : (
+                  <button className="button button--green" type="submit">Apply now</button>
+                )}
                 <span>We review applications with care and confidentiality.</span>
               </div>
               <FormStatus status={caregiverStatus} />

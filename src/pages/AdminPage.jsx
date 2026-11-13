@@ -442,33 +442,29 @@ function AdminPage() {
   }
 
   async function approveCaregiverApplication(application) {
-    const existingProfile = await supabase.from('caregiver_profiles').select('id').eq('application_id', application.id).maybeSingle()
-    if (existingProfile.error) {
-      notify(existingProfile.error.message, 'error')
+    const password = typeof application.password === 'string' ? application.password.trim() : ''
+    if (!password) {
+      notify('This caregiver application does not have a dashboard password yet. Ask them to submit one before approving.', 'warning')
       return
     }
 
-    if (!existingProfile.data) {
-      const { error: insertError } = await supabase.from('caregiver_profiles').insert({
-        application_id: application.id,
-        full_name: application.full_name,
-        email: application.email,
-        phone: application.phone,
-        city: application.city,
-        role: application.role || 'Caregiver',
-        status: 'active',
+    try {
+      const response = await fetch('/api/caregiver-approval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          applicationId: application.id,
+          fullName: application.full_name,
+          email: application.email,
+          password,
+        }),
       })
-      if (insertError) {
-        notify(insertError.message, 'error')
-        return
-      }
-    }
-
-    const { error } = await supabase.from('caregiver_applications').update({ status: 'approved' }).eq('id', application.id)
-    if (error) notify(error.message, 'error')
-    else {
-      notify('Caregiver application approved and added to the active team.')
+      const result = await response.json()
+      if (!response.ok) throw new Error(result?.error || 'The caregiver approval request could not be completed.')
+      notify(result?.message || 'Caregiver application approved and their dashboard access has been created.')
       await loadData()
+    } catch (error) {
+      notify(error.message || 'We could not approve the caregiver application.', 'error')
     }
   }
 

@@ -44,9 +44,11 @@ create table if not exists public.caregiver_applications (
   role text not null default 'Caregiver',
   experience text not null,
   availability text not null,
+  password text,
   background_check boolean not null default false,
   message text,
   status text not null default 'new',
+  approved_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -120,9 +122,11 @@ alter table public.caregiver_applications
   add column if not exists role text,
   add column if not exists experience text,
   add column if not exists availability text,
+  add column if not exists password text,
   add column if not exists background_check boolean,
   add column if not exists message text,
   add column if not exists status text,
+  add column if not exists approved_at timestamptz,
   add column if not exists created_at timestamptz;
 
 alter table public.caregiver_profiles
