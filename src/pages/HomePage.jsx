@@ -290,10 +290,12 @@ function HomePage() {
     fullName: '',
     email: '',
     phone: '',
+    gender: '',
     careType: '',
   })
   const [caregiverSubmitting, setCaregiverSubmitting] = useState(false)
   const [caregiverStatus, setCaregiverStatus] = useState(null)
+  const [caregiverReceipt, setCaregiverReceipt] = useState(null)
 
   useEffect(() => {
     const root = document.documentElement
@@ -473,7 +475,8 @@ function HomePage() {
   async function submitCaregiverApplication(event) {
     event.preventDefault()
     if (caregiverSubmitting) return
-    if (Object.values(caregiverForm).some((value) => !value.trim())) {
+    const formData = new FormData(event.currentTarget)
+    if ([caregiverForm.fullName, caregiverForm.email, caregiverForm.phone, caregiverForm.gender, caregiverForm.careType].some((value) => !value.trim())) {
       setCaregiverStatus({ type: 'error', message: 'Please complete all fields before submitting your application.' })
       return
     }
@@ -482,31 +485,40 @@ function HomePage() {
       full_name: caregiverForm.fullName.trim(),
       email: caregiverForm.email.trim(),
       phone: caregiverForm.phone.trim(),
+      gender: caregiverForm.gender,
       role: caregiverForm.careType,
-      created_at: new Date().toISOString(),
     }
 
     setCaregiverSubmitting(true)
     setCaregiverStatus({ type: 'loading', message: 'Submitting your application…' })
     try {
-      if (supabase) {
-        const { error } = await supabase.from('caregiver_applications').insert({
-          full_name: payload.full_name,
-          email: payload.email,
-          phone: payload.phone,
-          role: payload.role,
-          status: 'new',
-        })
-        if (error) throw error
-      } else {
-        const key = 'cedar-caregiver-applications'
-        const existing = JSON.parse(window.localStorage.getItem(key) || '[]')
-        existing.push(payload)
-        window.localStorage.setItem(key, JSON.stringify(existing))
+      const response = await fetch('/api/caregiver-application', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, website: formData.get('website') || '' }),
+      })
+      let result
+      try {
+        result = await response.json()
+      } catch {
+        throw new Error('The caregiver service returned an invalid response. Please try again later.')
       }
+      if (!response.ok) throw new Error(result.error || 'We could not submit your application right now. Please try again.')
 
-      setCaregiverStatus({ type: 'success', message: 'Thank you. Your application has been received. Our team will contact you soon.' })
-      setCaregiverForm({ fullName: '', email: '', phone: '', careType: '' })
+      if (result.referenceCode) {
+        setCaregiverReceipt({
+          ...payload,
+          fullName: payload.full_name,
+          referenceCode: result.referenceCode,
+          confirmationEmailSent: result.confirmationEmailSent,
+          adminNotificationSent: result.adminNotificationSent,
+        })
+        setCaregiverStatus(null)
+      } else {
+        setCaregiverReceipt(null)
+        setCaregiverStatus({ type: 'success', message: 'Thank you. Your application has been received.' })
+      }
+      setCaregiverForm({ fullName: '', email: '', phone: '', gender: '', careType: '' })
       showToast('Your caregiver application has been submitted.', 'success')
     } catch (error) {
       setCaregiverStatus({ type: 'error', message: error.message || 'We could not submit your application right now. Please try again.' })
@@ -784,23 +796,61 @@ function HomePage() {
                 <li>Meaningful client relationships and flexible scheduling</li>
               </ul>
             </div>
+            {caregiverReceipt ? (
+              <section className="caregiver-form caregiver-success" aria-labelledby="caregiver-success-title">
+                <p className="eyebrow"><span className="eyebrow__line" /> Submission complete</p>
+                <h3 id="caregiver-success-title">Thank you, {caregiverReceipt.fullName}</h3>
+                <p className="caregiver-success__message">Your caregiver application has been successfully submitted.</p>
+                <dl>
+                  <div><dt>Full name</dt><dd>{caregiverReceipt.fullName}</dd></div>
+                  <div><dt>Email</dt><dd>{caregiverReceipt.email}</dd></div>
+                  <div><dt>WhatsApp</dt><dd>{caregiverReceipt.phone}</dd></div>
+                  <div><dt>Gender</dt><dd>{caregiverReceipt.gender}</dd></div>
+                  <div><dt>Pronouns</dt><dd>{caregiverReceipt.gender === 'Male' ? 'He/him' : 'She/her'}</dd></div>
+                  <div><dt>Care service</dt><dd>{caregiverReceipt.role}</dd></div>
+                  <div><dt>Reference</dt><dd><code>{caregiverReceipt.referenceCode}</code></dd></div>
+                </dl>
+                <a className="button button--green" href={`/verify?reference=${encodeURIComponent(caregiverReceipt.referenceCode)}`}>Verify application status</a>
+                <p className="caregiver-success__email">
+                  {caregiverReceipt.confirmationEmailSent
+                    ? `A confirmation email was sent to ${caregiverReceipt.email} with a link to verify your application status.`
+                    : `Your application was saved, but we could not send the confirmation email to ${caregiverReceipt.email}. Keep your reference and contact Cedar if you need help.`}
+                </p>
+                <p className="caregiver-success__email">
+                  {caregiverReceipt.adminNotificationSent
+                    ? 'Cedar’s team has also been notified by email.'
+                    : 'Cedar’s team could not be notified by email. Please contact us so we can follow up.'}
+                </p>
+                <button className="button button--outline" type="button" onClick={() => setCaregiverReceipt(null)}>Return to form</button>
+              </section>
+            ) : (
             <form className="caregiver-form" onSubmit={submitCaregiverApplication} aria-busy={caregiverSubmitting}>
               <div className="contact-form__top"><span>Apply to join Cedar</span></div>
+              <input className="form-trap" name="website" tabIndex="-1" autoComplete="off" aria-hidden="true" />
               <label htmlFor="caregiver-name">Full name <span>*</span></label>
-              <input id="caregiver-name" value={caregiverForm.fullName} onChange={(event) => setCaregiverForm((current) => ({ ...current, fullName: event.target.value }))} placeholder="Your full name" maxLength="120" autoComplete="name" required />
+              <input id="caregiver-name" value={caregiverForm.fullName} onChange={(event) => { setCaregiverReceipt(null); setCaregiverForm((current) => ({ ...current, fullName: event.target.value })) }} placeholder="Your full name" maxLength="120" autoComplete="name" required />
 
               <label htmlFor="caregiver-email">Email address <span>*</span></label>
-              <input id="caregiver-email" type="email" value={caregiverForm.email} onChange={(event) => setCaregiverForm((current) => ({ ...current, email: event.target.value }))} placeholder="you@example.com" maxLength="160" autoComplete="email" required />
+              <input id="caregiver-email" type="email" value={caregiverForm.email} onChange={(event) => { setCaregiverReceipt(null); setCaregiverForm((current) => ({ ...current, email: event.target.value })) }} placeholder="you@example.com" maxLength="160" autoComplete="email" required />
 
               <label htmlFor="caregiver-phone">WhatsApp phone number <span>*</span></label>
-              <input id="caregiver-phone" type="tel" value={caregiverForm.phone} onChange={(event) => setCaregiverForm((current) => ({ ...current, phone: event.target.value }))} placeholder="+1 224 204 3281" maxLength="32" autoComplete="tel" inputMode="tel" required />
+              <input id="caregiver-phone" type="tel" value={caregiverForm.phone} onChange={(event) => { setCaregiverReceipt(null); setCaregiverForm((current) => ({ ...current, phone: event.target.value })) }} placeholder="+1 224 204 3281" maxLength="32" autoComplete="tel" inputMode="tel" required />
+
+              <label htmlFor="caregiver-gender">Gender <span>*</span></label>
+              <SearchableSelect
+                id="caregiver-gender"
+                value={caregiverForm.gender}
+                options={['Male', 'Female'].map((gender) => ({ value: gender, label: gender }))}
+                onChange={(gender) => { setCaregiverReceipt(null); setCaregiverForm((current) => ({ ...current, gender })) }}
+                placeholder="Select gender"
+              />
 
               <label htmlFor="caregiver-care-type">Which care service are you applying for? <span>*</span></label>
               <SearchableSelect
                 id="caregiver-care-type"
                 value={caregiverForm.careType}
                 options={services.map((service) => ({ value: service.title, label: service.title }))}
-                onChange={(careType) => setCaregiverForm((current) => ({ ...current, careType }))}
+                onChange={(careType) => { setCaregiverReceipt(null); setCaregiverForm((current) => ({ ...current, careType })) }}
                 placeholder="Search care services..."
               />
               <div className="contact-form__bottom">
@@ -811,6 +861,7 @@ function HomePage() {
               </div>
               <FormStatus status={caregiverStatus} />
             </form>
+            )}
           </div>
         </section>
 

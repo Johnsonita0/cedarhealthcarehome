@@ -7,6 +7,10 @@ export function isHoneypotFilled(body) {
   return typeof body.website === 'string' && body.website.trim().length > 0
 }
 
+export function isCaregiverReference(value) {
+  return typeof value === 'string' && /^CED-\d{2}-[A-Z0-9]{5}-[A-Z0-9]{5}$/i.test(value)
+}
+
 export function getSupabaseConfig() {
   const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env
   const missing = []

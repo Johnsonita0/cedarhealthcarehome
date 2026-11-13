@@ -365,17 +365,16 @@
   .admin-audience-count { align-self: flex-start; }
 }
 
-.admin-caregiver-grid {
+.admin-caregiver-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: 1fr;
+  gap: 8px;
   margin-top: 16px;
 }
 
 .admin-caregiver-card {
-  display: grid;
-  gap: 10px;
-  padding: 16px;
+  display: block;
+  overflow: hidden;
   border: 1px solid #e5ece6;
   border-radius: 8px;
   background: #fff;
@@ -383,11 +382,28 @@
 
 .admin-caregiver-card__top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding: 12px 16px;
 }
 
+.admin-caregiver-card__toggle {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-caregiver-card__toggle > span:first-child { min-width: 0; }
 .admin-caregiver-card__top strong,
 .admin-caregiver-card p,
 .admin-caregiver-card small,
@@ -406,6 +422,21 @@
   font-size: 11px;
   line-height: 1.5;
 }
+
+.admin-caregiver-card__toggle-label {
+  flex: 0 0 auto;
+  color: #315b40;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.admin-caregiver-card__details {
+  display: grid;
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+
+.admin-caregiver-card__details[hidden] { display: none; }
 
 .admin-caregiver-card__contact {
   display: grid;
@@ -508,7 +539,8 @@
 }
 
 .admin-status-pill--active,
-.admin-status-pill--approved {
+.admin-status-pill--approved,
+.admin-status-pill--accepted {
   color: #1d5b35;
   background: #e5f3e8;
 }
@@ -534,7 +566,7 @@
 }
 
 @media (max-width: 760px) {
-  .admin-caregiver-grid,
+  .admin-caregiver-list,
   .admin-assignment-form {
     grid-template-columns: 1fr;
   }

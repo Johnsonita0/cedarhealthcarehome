@@ -221,7 +221,7 @@ function AdminPage() {
       supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
       supabase.from('newsletter_subscribers').select('*').order('created_at', { ascending: false }),
       supabase.from('newsletter_campaigns').select('*').order('sent_at', { ascending: false }).limit(10),
-      supabase.from('caregiver_applications').select('id,full_name,email,phone,role,status,created_at').order('created_at', { ascending: false }),
+      supabase.from('caregiver_applications').select('id,reference_code,full_name,email,phone,gender,role,status,created_at').order('created_at', { ascending: false }),
       supabase.from('site_content').select('draft,published,updated_at,published_at').eq('id', 1).maybeSingle(),
     ])
     const queryError = [requests, submissions, testimonials, subscribers, campaigns, caregiverApplications, siteContent]
@@ -477,10 +477,55 @@ function AdminPage() {
   }
 
   async function updateCaregiverStatus(application, status) {
+    if (status === 'accepted') {
+      if (!session?.access_token) return notify('Your admin session has expired. Sign in again.', 'error')
+      try {
+        const response = await fetch('/api/accept-caregiver-application', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ referenceCode: application.reference_code }),
+        })
+        let result
+        try {
+          result = await response.json()
+        } catch {
+          throw new Error('The application service returned an invalid response. Please try again.')
+        }
+        if (!response.ok) return notify(result.error || 'The application could not be accepted.', 'error')
+        notify(
+          result.emailSent
+            ? 'Caregiver application accepted and acceptance email sent.'
+            : 'Caregiver application accepted, but the email could not be sent. You can try again.',
+          result.emailSent ? 'success' : 'warning',
+        )
+        await loadData()
+      } catch (error) {
+        notify(error.message || 'The application could not be accepted.', 'error')
+      }
+      return
+    }
+
     const { error } = await supabase.from('caregiver_applications').update({ status }).eq('id', application.id)
     if (error) notify(error.message, 'error')
     else {
       notify(`Caregiver application marked as ${status}.`)
+      await loadData()
+    }
+  }
+
+  async function deleteCaregiverApplication(application) {
+    if (!await confirmAction({
+      title: 'Delete this caregiver application?',
+      message: `The application from ${application.full_name} will be permanently deleted.`,
+      confirmLabel: 'Delete application',
+    })) return
+    const { error } = await supabase.from('caregiver_applications').delete().eq('id', application.id)
+    if (error) notify(error.message, 'error')
+    else {
+      notify('Caregiver application deleted.')
       await loadData()
     }
   }
@@ -740,6 +785,7 @@ function AdminPage() {
           <CaregiverManagementView
             applicants={data.caregiverApplications}
             onStatus={updateCaregiverStatus}
+            onDelete={deleteCaregiverApplication}
           />
         )}
         {activeView === 'testimonials' && (
@@ -879,7 +925,9 @@ function NotificationsView({ notifications, unreadCount, loading, onMarkRead, on
   )
 }
 
-function CaregiverManagementView({ applicants, onStatus }) {
+function CaregiverManagementView({ applicants, onStatus, onDelete }) {
+  const [expandedApplicantId, setExpandedApplicantId] = useState(null)
+
   return (
     <section className="admin-workspace">
       <div className="admin-page-heading">
@@ -902,37 +950,52 @@ function CaregiverManagementView({ applicants, onStatus }) {
         {applicants.length === 0 ? (
           <div className="admin-empty-state"><h3>No applications yet</h3><p>New caregiver applications will appear here.</p></div>
         ) : (
-          <div className="admin-caregiver-grid">
+          <div className="admin-caregiver-list">
             {applicants.map((application) => {
               const contacted = application.status === 'contacted'
+              const accepted = application.status === 'accepted'
               const whatsappUrl = caregiverWhatsAppUrl(application)
+              const isExpanded = expandedApplicantId === application.id
+              const detailsId = `caregiver-application-${application.id}`
               return (
                 <article className="admin-caregiver-card" key={application.id}>
                   <div className="admin-caregiver-card__top">
-                    <div>
-                      <strong>{application.full_name}</strong>
-                      <small>Applied for {application.role || 'caregiving'}</small>
-                    </div>
-                    <span className={`admin-status-pill admin-status-pill--${contacted ? 'contacted' : 'new'}`}>
-                      {contacted ? 'Contacted' : 'New'}
-                    </span>
-                  </div>
-                  <div className="admin-caregiver-card__contact">
-                    <p><Icon name="mail" size={16} /><a href={`mailto:${application.email}`}>{application.email}</a></p>
-                    <p><Icon name="whatsapp" size={16} />{application.phone}</p>
-                    <p><Icon name="clock" size={16} />Applied {displayDate(application.created_at, { dateStyle: 'medium' })}</p>
-                  </div>
-                  <div className="admin-caregiver-card__actions">
-                    <a className="admin-secondary-button" href={`mailto:${application.email}`}>Email</a>
-                    {whatsappUrl && <a className="admin-secondary-button" href={whatsappUrl} target="_blank" rel="noreferrer">WhatsApp</a>}
                     <button
                       type="button"
-                      className="admin-primary-button"
-                      onClick={() => onStatus(application, 'contacted')}
-                      disabled={contacted}
+                      className="admin-caregiver-card__toggle"
+                      aria-expanded={isExpanded}
+                      aria-controls={detailsId}
+                      onClick={() => setExpandedApplicantId(isExpanded ? null : application.id)}
                     >
-                      {contacted ? 'Marked contacted' : 'Mark as contacted'}
+                      <span>
+                        <strong>{application.full_name}</strong>
+                        <small>Application {application.reference_code}</small>
+                        <small>Applied for {application.role || 'caregiving'}</small>
+                      </span>
+                      <span className="admin-caregiver-card__toggle-label">{isExpanded ? 'Hide details' : 'View details'}</span>
                     </button>
+                    <span className={`admin-status-pill admin-status-pill--${accepted ? 'accepted' : contacted ? 'contacted' : 'new'}`}>
+                      {accepted ? 'Accepted' : contacted ? 'Contacted' : 'New'}
+                    </span>
+                  </div>
+                  <div className="admin-caregiver-card__details" id={detailsId} hidden={!isExpanded}>
+                    <div className="admin-caregiver-card__contact">
+                      <p><Icon name="mail" size={16} /><a href={`mailto:${application.email}`}>{application.email}</a></p>
+                      <p><Icon name="whatsapp" size={16} />{application.phone}</p>
+                      <p><Icon name="user" size={16} />Gender: {application.gender || 'Not specified'}</p>
+                      <p><Icon name="user" size={16} />Pronouns: {application.gender === 'Male' ? 'He/him' : application.gender === 'Female' ? 'She/her' : 'Not specified'}</p>
+                      <p><Icon name="clock" size={16} />Reference {application.reference_code}</p>
+                      <p><Icon name="clock" size={16} />Applied {displayDate(application.created_at, { dateStyle: 'medium' })}</p>
+                    </div>
+                    <div className="admin-caregiver-card__actions">
+                      <a className="admin-secondary-button" href={`mailto:${application.email}`}>Email</a>
+                      {whatsappUrl && <a className="admin-secondary-button" href={whatsappUrl} target="_blank" rel="noreferrer">WhatsApp</a>}
+                      {!contacted && !accepted && <button type="button" className="admin-secondary-button" onClick={() => onStatus(application, 'contacted')}>Mark as contacted</button>}
+                      <button type="button" className="admin-primary-button" onClick={() => onStatus(application, 'accepted')}>
+                        {accepted ? 'Resend acceptance email' : 'Mark as accepted'}
+                      </button>
+                      <button type="button" className="admin-danger-button" onClick={() => onDelete(application)}>Delete</button>
+                    </div>
                   </div>
                 </article>
               )

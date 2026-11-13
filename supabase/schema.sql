@@ -37,9 +37,11 @@ create table if not exists public.testimonials (
 
 create table if not exists public.caregiver_applications (
   id uuid primary key default gen_random_uuid(),
+  reference_code text not null unique,
   full_name text not null,
   email text not null,
   phone text not null,
+  gender text not null,
   role text not null,
   status text not null default 'new',
   created_at timestamptz not null default now()
@@ -82,9 +84,11 @@ alter table public.testimonials
   add column if not exists is_published boolean not null default false;
 
 alter table public.caregiver_applications
+  add column if not exists reference_code text,
   add column if not exists full_name text,
   add column if not exists email text,
   add column if not exists phone text,
+  add column if not exists gender text,
   add column if not exists role text,
   add column if not exists status text,
   add column if not exists created_at timestamptz;
@@ -111,6 +115,27 @@ begin
   end if;
 end;
 $$;
+
+with missing_references as (
+  select
+    id,
+    to_char(coalesce(created_at, now()), 'YY') as application_year,
+    upper(replace(gen_random_uuid()::text, '-', '')) as token
+  from public.caregiver_applications
+  where reference_code is null
+)
+update public.caregiver_applications as application
+set reference_code = 'CED-' || missing_references.application_year || '-'
+  || substr(missing_references.token, 1, 5) || '-'
+  || substr(missing_references.token, 6, 5)
+from missing_references
+where application.id = missing_references.id;
+
+alter table public.caregiver_applications
+  alter column reference_code set not null;
+
+create unique index if not exists caregiver_applications_reference_code_key
+  on public.caregiver_applications(reference_code);
 
 alter table public.site_content
   add column if not exists draft jsonb not null default '{}'::jsonb,

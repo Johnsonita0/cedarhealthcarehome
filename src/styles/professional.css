@@ -87,6 +87,36 @@ body { color: var(--ink); background: #f7f9f5; }
 .caregiver-form textarea { min-height: 110px; resize: vertical; }
 .caregiver-form__checkbox { display: flex; align-items: flex-start; gap: 10px; margin-top: 6px; text-transform: none; letter-spacing: normal; }
 .caregiver-form__checkbox input { width: auto; margin-top: 3px; }
+.caregiver-success { align-content: start; padding: 25px; border-color: #cfe2d2; background: #f8fbf8; }
+.caregiver-success .eyebrow { margin: 0; color: #39704a; }
+.caregiver-success h3 { margin: 0; color: #1d5b35; font-size: 25px; }
+.caregiver-success__message, .caregiver-success__email { margin: 0; color: #4f6858; font-size: 13px; line-height: 1.65; }
+.caregiver-success dl { display: grid; gap: 8px; margin: 2px 0; padding: 15px; border: 1px solid #e0ebe2; border-radius: 10px; background: #fff; }
+.caregiver-success dl > div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; }
+.caregiver-success dt { color: #63776a; font-size: 12px; font-weight: 600; }
+.caregiver-success dd { min-width: 0; margin: 0; color: #274c36; font-size: 12px; overflow-wrap: anywhere; }
+.caregiver-success code { color: #174e29; font-size: 12px; font-weight: 700; }
+.caregiver-success > .button { width: fit-content; }
+.caregiver-success > button { cursor: pointer; }
+.verify-page { min-height: calc(100vh - 76px); background: linear-gradient(180deg, #f7f9f5 0%, #edf4ef 100%); }
+.verify-card { width: min(100%, 640px); margin: 0 auto; padding: clamp(24px, 5vw, 48px); border: 1px solid #dfeae3; border-radius: 16px; background: rgba(255,255,255,.94); box-shadow: 0 18px 40px rgba(21,57,30,.06); }
+.verify-card h1 { margin: 0; color: #1d3829; font-size: clamp(30px, 5vw, 42px); line-height: 1.1; letter-spacing: -.04em; }
+.verify-card__intro, .verify-card__help { color: #5a6f61; font-size: 14px; line-height: 1.7; }
+.verify-form { display: grid; gap: 10px; margin-top: 22px; }
+.verify-form label { color: #234f3a; font-size: 12px; font-weight: 700; }
+.verify-form input { width: 100%; min-width: 0; min-height: 48px; padding: 12px 13px; border: 1px solid #d8e3d9; border-radius: 8px; color: #213f2d; background: #fff; font: inherit; }
+.verify-form input:focus { outline: 2px solid #8bb699; outline-offset: 2px; }
+.verify-form button { width: fit-content; margin-top: 5px; }
+.verify-message { margin: 16px 0 0; color: #617161; font-size: 13px; }
+.verify-message--error { color: #a13a2f; }
+.verify-result { display: grid; gap: 8px; margin-top: 20px; padding: 18px; border: 1px solid #cfe2d2; border-radius: 10px; background: #f3f8f3; }
+.verify-result__label { color: #63776a; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.verify-result h2 { margin: 0; color: #1d5b35; font-size: 21px; }
+.verify-result p { margin: 0; color: #4f6858; font-size: 13px; line-height: 1.65; }
+.verify-result__reference { overflow-wrap: anywhere; }
+.verify-result code { color: #174e29; font-size: 11px; }
+.verify-card__help { margin: 20px 0 0; }
+.verify-card__help a { color: #176132; font-weight: 700; }
 .contact-form__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 18px; }
 .contact-form__required { color: #7a8c82; font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 .hero__actions .button--green:hover { background: #ffdc45; }
