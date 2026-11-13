@@ -507,7 +507,6 @@ function HomePage() {
 
       setCaregiverStatus({ type: 'success', message: 'Thank you. Your application has been received. Our team will contact you soon.' })
       setCaregiverForm({ fullName: '', email: '', phone: '', careType: '' })
-      event.currentTarget.reset()
       showToast('Your caregiver application has been submitted.', 'success')
     } catch (error) {
       setCaregiverStatus({ type: 'error', message: error.message || 'We could not submit your application right now. Please try again.' })
