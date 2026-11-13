@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100" fill="none">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1600" y2="1100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F9F5"/>
+      <stop offset="1" stop-color="#DDEADF"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="1000" y1="220" x2="1390" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2B7A3C"/>
+      <stop offset="1" stop-color="#06440B"/>
+    </linearGradient>
+    <filter id="shadow" x="835" y="115" width="690" height="790" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="30"/>
+    </filter>
+  </defs>
+  <path fill="url(#background)" d="M0 0h1600v1100H0z"/>
+  <circle cx="1285" cy="545" r="290" fill="#C5DCC9"/>
+  <circle cx="1285" cy="545" r="230" fill="#E9F1E8"/>
+  <path d="M888 764V579l162-133 162 133v185H888Z" fill="#F9FBF8"/>
+  <path d="m850 590 200-164 200 164" stroke="#A8C3AD" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1010 764V630h80v134" fill="#D6E5D8"/>
+  <path d="M1142 628h40v42h-40z" fill="#D6E5D8"/>
+  <ellipse cx="1200" cy="795" rx="270" ry="38" fill="#8BAE92" fill-opacity=".26"/>
+  <path d="M1037 268c0-15 12-27 27-27h274c15 0 27 12 27 27v192c0 143-112 262-254 278-142-16-254-135-254-278V268c0-15 12-27 27-27h153Z" fill="#173D25" fill-opacity=".18" filter="url(#shadow)"/>
+  <path d="M1043 226c0-14 11-25 25-25h283c14 0 25 11 25 25v201c0 137-104 250-241 267-137-17-241-130-241-267V226c0-14 11-25 25-25h124Z" fill="url(#shield)"/>
+  <path d="m1105 417 77 76 147-163" stroke="#FFF" stroke-width="35" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M933 326c32-63 81-105 146-126" stroke="#CCA406" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="914" cy="364" r="14" fill="#CCA406"/>
+  <path d="M1470 761c-41 0-74-33-74-74 41 0 74 33 74 74Z" fill="#7DAD84"/>
+  <path d="M1470 761c0-41 33-74 74-74 0 41-33 74-74 74Z" fill="#A5C9A9"/>
+</svg>
