@@ -96,8 +96,8 @@ const heroSlideCandidates = [
     noteDescription: 'Support that feels comfortable.',
   },
   {
-    image: 'https://images.pexels.com/photos/6129106/pexels-photo-6129106.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A clinician speaking with a client while holding a clipboard',
+    image: 'https://images.pexels.com/photos/6129242/pexels-photo-6129242.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A caregiver comforting a client at home',
     position: '48% 38%',
     mobilePosition: '55% 30%',
     eyebrow: 'Care starts with listening',
@@ -132,8 +132,8 @@ const heroSlideCandidates = [
     noteDescription: 'We are here to help.',
   },
   {
-    image: 'https://images.pexels.com/photos/6129106/pexels-photo-6129106.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A clinician speaking with a client while holding a clipboard',
+    image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A caregiver sharing a reassuring moment with an older adult',
     position: '62% 34%',
     mobilePosition: '64% 30%',
     eyebrow: 'A plan made for you',
@@ -180,8 +180,8 @@ const heroSlideCandidates = [
     noteDescription: 'Everyday help at home.',
   },
   {
-    image: 'https://images.pexels.com/photos/6129106/pexels-photo-6129106.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    alt: 'A clinician speaking with a client while holding a clipboard',
+    image: 'https://images.pexels.com/photos/18459193/pexels-photo-18459193.jpeg?auto=compress&cs=tinysrgb&w=1400',
+    alt: 'A caregiver serving tea to an older woman at home',
     position: '54% 44%',
     mobilePosition: '49% 38%',
     eyebrow: 'Professional care, human connection',
@@ -228,8 +228,8 @@ const heroSlideCandidates = [
     noteDescription: 'Everyday help at home.',
   },
   {
-    image: 'https://images.pexels.com/photos/7345476/pexels-photo-7345476.jpeg?auto=compress&cs=tinysrgb&w=1400',
-    alt: 'A healthcare worker checking an older man’s blood pressure at home',
+    image: 'https://images.pexels.com/photos/6129242/pexels-photo-6129242.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A caregiver comforting a client at home',
     position: '50% 40%',
     mobilePosition: '52% 36%',
     eyebrow: 'Professional care, human connection',
@@ -274,6 +274,45 @@ const services = [
     title: '24/7 availability',
     description: 'Talk with our team about scheduling options, including around-the-clock support, for your family’s needs.',
     icon: 'clock',
+  },
+]
+const everydayCareMoments = [
+  {
+    title: 'Help with everyday routines',
+    image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A caregiver sharing a reassuring moment with an older adult',
+  },
+  {
+    title: 'Good company at home',
+    image: 'https://images.pexels.com/photos/18459193/pexels-photo-18459193.jpeg?auto=compress&cs=tinysrgb&w=1400',
+    alt: 'A caregiver serving tea to an older woman at home',
+  },
+  {
+    title: 'Meals and shared moments',
+    image: 'https://images.pexels.com/photos/7446778/pexels-photo-7446778.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A care professional speaking with clients around a table',
+  },
+  {
+    title: 'Wellness support at home',
+    image: 'https://images.pexels.com/photos/6129242/pexels-photo-6129242.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A caregiver comforting a client at home',
+  },
+]
+const careFocusAreas = [
+  {
+    title: 'Changing health needs',
+    description: 'Personalized support that can adapt as health needs and daily routines change.',
+    icon: 'health',
+  },
+  {
+    title: 'Recovery at home',
+    description: 'A helping hand as you return to familiar routines after a hospital stay.',
+    icon: 'heart',
+  },
+  {
+    title: 'Skilled support',
+    description: 'Health support and wellness check-ins delivered with patience and clear communication.',
+    icon: 'care',
   },
 ]
 
@@ -691,6 +730,30 @@ function HomePage() {
           </div>
         </section>
 
+        <section className="care-gallery section-pad" aria-labelledby="care-gallery-title">
+          <div className="container">
+            <div className="section-heading section-heading--row">
+              <div>
+                <p className="eyebrow"><span className="eyebrow__line" /> Thoughtful help, every day</p>
+                <h2 id="care-gallery-title">Small moments.<br /><em>Meaningful support.</em></h2>
+              </div>
+              <p className="section-heading__aside">From shared conversation to health check-ins, Cedar’s care is shaped around the people, routines, and moments that make a place feel like home.</p>
+            </div>
+            <div className="care-gallery__grid" aria-label="Examples of care at home">
+              {everydayCareMoments.map((moment) => (
+                <figure className="care-gallery__card" key={moment.title}>
+                  <img src={moment.image} alt={moment.alt} loading="lazy" decoding="async" />
+                  <figcaption>{moment.title}</figcaption>
+                </figure>
+              ))}
+            </div>
+            <div className="care-gallery__note">
+              <span>Every care plan starts with listening to what matters to you.</span>
+              <a className="text-link" href="#contact">Talk with Cedar <Icon name="arrow" size={16} /></a>
+            </div>
+          </div>
+        </section>
+
         <section className="about section-pad" id="about">
           <div className="container about__grid">
             <div className="about__intro">
@@ -713,6 +776,34 @@ function HomePage() {
               </article>
               <div className="about__signoff"><span className="about__signoff-dot" /> Rooted in compassion. Here when it matters.</div>
             </div>
+          </div>
+        </section>
+
+        <section className="care-focus section-pad" aria-labelledby="care-focus-title">
+          <div className="container">
+            <div className="section-heading section-heading--center">
+              <p className="eyebrow"><span className="eyebrow__line" /> Care for changing needs</p>
+              <h2 id="care-focus-title">Support for the next<br /><em>step at home.</em></h2>
+              <p>When health or daily routines change, we’ll listen and talk through the support that may fit your situation.</p>
+            </div>
+            <div className="care-focus__grid">
+              {careFocusAreas.map((area) => (
+                <article className="care-focus__card" key={area.title}>
+                  <span className="care-focus__icon"><Icon name={area.icon} size={22} /></span>
+                  <h3>{area.title}</h3>
+                  <p>{area.description}</p>
+                </article>
+              ))}
+            </div>
+            <aside className="care-focus__coverage">
+              <span className="care-focus__coverage-icon"><Icon name="spark" size={21} /></span>
+              <div>
+                <p className="eyebrow">Planning care</p>
+                <h3>Questions about costs or coverage?</h3>
+                <p>Contact our team to discuss your care needs and cost questions. Coverage and eligibility depend on your plan; confirm benefits directly with your provider.</p>
+              </div>
+              <a className="button button--green" href="#contact">Talk through your options</a>
+            </aside>
           </div>
         </section>
 
@@ -797,6 +888,7 @@ function HomePage() {
               <p className="eyebrow eyebrow--light"><span className="eyebrow__line" /> Join our team</p>
               <h2>Caregivers are welcome here.</h2>
               <p>We are building a compassionate home care team that treats clients with respect, patience, and dignity. If you care deeply about helping people thrive at home, we would love to hear from you.</p>
+              <a className="button button--cream" href="#caregiver-application">Become a Cedar caregiver</a>
               <ul>
                 <li>Licensed &amp; insured home care agency</li>
                 <li>Supportive, professional team culture</li>
@@ -804,7 +896,7 @@ function HomePage() {
               </ul>
             </div>
             {caregiverReceipt ? (
-              <section className="caregiver-form caregiver-success" aria-labelledby="caregiver-success-title">
+              <section className="caregiver-form caregiver-success" id="caregiver-application" aria-labelledby="caregiver-success-title">
                 <p className="eyebrow"><span className="eyebrow__line" /> Submission complete</p>
                 <h3 id="caregiver-success-title">Thank you, {caregiverReceipt.fullName}</h3>
                 <p className="caregiver-success__message">
@@ -841,7 +933,7 @@ function HomePage() {
                 <button className="button button--outline" type="button" onClick={() => setCaregiverReceipt(null)}>Return to form</button>
               </section>
             ) : (
-            <form className="caregiver-form" onSubmit={submitCaregiverApplication} aria-busy={caregiverSubmitting}>
+            <form className="caregiver-form" id="caregiver-application" onSubmit={submitCaregiverApplication} aria-busy={caregiverSubmitting}>
               <div className="contact-form__top"><span>Apply to join Cedar</span></div>
               <input className="form-trap" name="website" tabIndex="-1" autoComplete="off" aria-hidden="true" />
               <label htmlFor="caregiver-name">Full name <span>*</span></label>

@@ -2,7 +2,7 @@ import { privacyPolicy, termsOfUse } from './legalContent.js'
 
 export const defaultSiteContent = {
   hero: {
-    image: 'https://images.pexels.com/photos/6129106/pexels-photo-6129106.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
     eyebrow: 'Personalized home care in Chicago',
     headline: 'Support shaped around your life.',
     introduction: 'From daily routines to changing health needs, Cedar offers thoughtful support to help you feel comfortable, connected, and cared for at home.',
