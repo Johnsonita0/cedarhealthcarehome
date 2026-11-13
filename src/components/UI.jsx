@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import cedarLogo from '../images/logo/logo.jpeg'
 
 const clientAppUrl = import.meta.env.VITE_CLIENT_APP_URL
@@ -41,9 +41,156 @@ export function Icon({ name, size = 22, className = '' }) {
     menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
     close: <><path d="m6 6 12 12M18 6 6 18" /></>,
     spark: <><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" /><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z" /></>,
+    search: <><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></>,
   }
 
   return <svg {...common}>{paths[name] ?? paths.leaf}</svg>
+}
+
+export function SearchableSelect({ id, value, options, onChange, placeholder = 'Search options...', className = '', ...inputProps }) {
+  const listboxId = useId()
+  const [query, setQuery] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const selectedOption = options.find((option) => String(option.value) === String(value))
+  const visibleOptions = options.filter((option) => option.label.toLowerCase().includes(query.trim().toLowerCase()))
+
+  function chooseOption(option) {
+    onChange(option.value)
+    setQuery('')
+    setIsOpen(false)
+  }
+
+  function handleKeyDown(event) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setIsOpen(true)
+      setActiveIndex((current) => Math.min(current < 0 ? 0 : current + 1, visibleOptions.length - 1))
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setIsOpen(true)
+      setActiveIndex((current) => current < 0 ? Math.max(visibleOptions.length - 1, 0) : Math.max(current - 1, 0))
+    } else if (event.key === 'Enter' && isOpen && visibleOptions.length) {
+      event.preventDefault()
+      chooseOption(visibleOptions[activeIndex] || visibleOptions[0])
+    } else if (event.key === 'Escape' && isOpen) {
+      event.preventDefault()
+      setQuery('')
+      setIsOpen(false)
+    }
+  }
+
+  return (
+    <div className={`searchable-select${className ? ` ${className}` : ''}`}>
+      <div className="searchable-select__control">
+        <input
+          {...inputProps}
+          id={id}
+          type="text"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
+          aria-controls={listboxId}
+          aria-activedescendant={isOpen && visibleOptions[activeIndex] ? `${listboxId}-${activeIndex}` : undefined}
+          autoComplete="off"
+          value={isOpen ? query : selectedOption?.label || ''}
+          placeholder={isOpen ? placeholder : selectedOption?.label || placeholder}
+          onFocus={() => { setQuery(''); setIsOpen(true); setActiveIndex(-1) }}
+          onChange={(event) => { setQuery(event.target.value); setIsOpen(true); setActiveIndex(-1) }}
+          onKeyDown={handleKeyDown}
+          onBlur={() => { setQuery(''); setIsOpen(false) }}
+        />
+        <Icon name="search" size={16} className="searchable-select__icon" />
+      </div>
+      {isOpen && (
+        <ul className="searchable-select__options" id={listboxId} role="listbox">
+          {visibleOptions.length ? visibleOptions.map((option, index) => (
+            <li
+              className={index === activeIndex ? 'is-active' : ''}
+              id={`${listboxId}-${index}`}
+              key={option.value}
+              role="option"
+              aria-selected={String(option.value) === String(value)}
+              onMouseDown={(event) => event.preventDefault()}
+              onMouseEnter={() => setActiveIndex(index)}
+              onClick={() => chooseOption(option)}
+            >
+              {option.label}
+            </li>
+          )) : <li className="searchable-select__empty" role="presentation">No matches found</li>}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+export function ModalSelect({ id, label, value, options, onChange, placeholder = 'Choose an option' }) {
+  const dialogId = useId()
+  const [isOpen, setIsOpen] = useState(false)
+  const triggerRef = useRef(null)
+  const selectedOption = options.find((option) => option.value === value)
+
+  function closePicker() {
+    setIsOpen(false)
+    window.requestAnimationFrame(() => triggerRef.current?.focus())
+  }
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+    const handleKeyDown = (event) => {
+      if (event.key !== 'Escape') return
+      setIsOpen(false)
+      window.requestAnimationFrame(() => triggerRef.current?.focus())
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen])
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        id={id}
+        type="button"
+        className="modal-select__trigger"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        aria-controls={dialogId}
+        onClick={() => setIsOpen(true)}
+      >
+        <span>{selectedOption?.label || placeholder}</span>
+        <span className="modal-select__chevron" aria-hidden="true">⌄</span>
+      </button>
+      {isOpen && (
+        <div className="modal-select__backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePicker() }}>
+          <section className="modal-select__dialog" id={dialogId} role="dialog" aria-modal="true" aria-labelledby={`${dialogId}-title`}>
+            <div className="modal-select__heading">
+              <h2 id={`${dialogId}-title`}>{label}</h2>
+              <button type="button" className="modal-select__close" aria-label="Close care options" onClick={closePicker}>
+                <Icon name="close" size={20} />
+              </button>
+            </div>
+            <div className="modal-select__options">
+              {options.map((option) => (
+                <button
+                  type="button"
+                  className={`modal-select__option${option.value === value ? ' is-selected' : ''}`}
+                  key={option.value}
+                  aria-pressed={option.value === value}
+                  onClick={() => {
+                    onChange(option.value)
+                    closePicker()
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+    </>
+  )
 }
 
 export function Brand({ light = false }) {

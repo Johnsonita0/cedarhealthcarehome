@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Icon, SiteSplash } from '../components/UI.jsx'
+import { useEffect, useRef, useState } from 'react'
+import { Icon, SearchableSelect, SiteSplash } from '../components/UI.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
 import { defaultSiteContent } from '../data/adminDefaults.js'
 import cedarLogo from '../images/logo/logo.jpeg'
@@ -33,8 +33,6 @@ const emptyData = {
   subscribers: [],
   campaigns: [],
   caregiverApplications: [],
-  caregiverProfiles: [],
-  caregiverAssignments: [],
   siteContent: null,
 }
 const readNotificationStorageKey = 'cedar-admin-read-notifications'
@@ -51,6 +49,19 @@ function loadReadNotificationIds() {
 function displayDate(value, options = { dateStyle: 'medium' }) {
   if (!value) return 'Not yet published'
   return new Intl.DateTimeFormat('en-US', options).format(new Date(value))
+}
+
+function caregiverWhatsAppUrl(application) {
+  const phoneDigits = String(application.phone || '').replace(/\D/g, '')
+  const internationalPhone = phoneDigits.startsWith('00')
+    ? phoneDigits.slice(2)
+    : phoneDigits.length === 10
+      ? `1${phoneDigits}`
+      : phoneDigits
+  if (!internationalPhone) return null
+
+  const message = `Hello ${application.full_name}, this is Cedar Healthcare following up on your application for ${application.role || 'caregiving'}.`
+  return `https://wa.me/${internationalPhone}?text=${encodeURIComponent(message)}`
 }
 
 function mergeContent(value) {
@@ -91,6 +102,8 @@ function AdminPage() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
   const [profileModalOpen, setProfileModalOpen] = useState(false)
+  const [confirmation, setConfirmation] = useState(null)
+  const confirmationResolver = useRef(null)
   const [requestFilter, setRequestFilter] = useState('new')
   const [selectedRequestId, setSelectedRequestId] = useState(null)
   const [readNotificationIds, setReadNotificationIds] = useState(loadReadNotificationIds)
@@ -109,6 +122,29 @@ function AdminPage() {
     setNotice(message)
     showToast(message, type)
   }
+
+  function confirmAction(options) {
+    return new Promise((resolve) => {
+      confirmationResolver.current = resolve
+      setConfirmation(options)
+    })
+  }
+
+  function finishConfirmation(accepted) {
+    const resolve = confirmationResolver.current
+    confirmationResolver.current = null
+    setConfirmation(null)
+    resolve?.(accepted)
+  }
+
+  useEffect(() => {
+    if (!confirmation) return undefined
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') finishConfirmation(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [confirmation])
 
   function saveReadNotificationIds(nextIds) {
     setReadNotificationIds(nextIds)
@@ -179,18 +215,16 @@ function AdminPage() {
   async function loadData() {
     if (!supabase) return
     setDataLoading(true)
-    const [requests, submissions, testimonials, subscribers, campaigns, caregiverApplications, caregiverProfiles, caregiverAssignments, siteContent] = await Promise.all([
+    const [requests, submissions, testimonials, subscribers, campaigns, caregiverApplications, siteContent] = await Promise.all([
       supabase.from('care_requests').select('*').order('created_at', { ascending: false }),
       supabase.from('testimonial_submissions').select('*').order('created_at', { ascending: false }),
       supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
       supabase.from('newsletter_subscribers').select('*').order('created_at', { ascending: false }),
       supabase.from('newsletter_campaigns').select('*').order('sent_at', { ascending: false }).limit(10),
-      supabase.from('caregiver_applications').select('*').order('created_at', { ascending: false }),
-      supabase.from('caregiver_profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('caregiver_client_assignments').select('*').order('created_at', { ascending: false }),
+      supabase.from('caregiver_applications').select('id,full_name,email,phone,role,status,created_at').order('created_at', { ascending: false }),
       supabase.from('site_content').select('draft,published,updated_at,published_at').eq('id', 1).maybeSingle(),
     ])
-    const queryError = [requests, submissions, testimonials, subscribers, campaigns, caregiverApplications, caregiverProfiles, caregiverAssignments, siteContent]
+    const queryError = [requests, submissions, testimonials, subscribers, campaigns, caregiverApplications, siteContent]
       .find((result) => result.error)?.error
 
     if (queryError) {
@@ -203,8 +237,6 @@ function AdminPage() {
         subscribers: subscribers.data || [],
         campaigns: campaigns.data || [],
         caregiverApplications: caregiverApplications.data || [],
-        caregiverProfiles: caregiverProfiles.data || [],
-        caregiverAssignments: caregiverAssignments.data || [],
         siteContent: siteContent.data,
       }
       setData(nextData)
@@ -354,11 +386,19 @@ function AdminPage() {
       delete draft[key]
     } else if (action === 'unpublish') {
       if (!hasPublished) return
-      if (!window.confirm(`Unpublish ${section.label.toLowerCase()}? Its draft will be kept.`)) return
+      if (!await confirmAction({
+        title: `Unpublish ${section.label.toLowerCase()}?`,
+        message: 'Its draft will be kept.',
+        confirmLabel: 'Unpublish',
+      })) return
       delete published[key]
     } else if (action === 'delete') {
       if (!hasDraft && !hasPublished) return
-      if (!window.confirm(`Delete the saved ${section.label.toLowerCase()} from drafts and the public site?`)) return
+      if (!await confirmAction({
+        title: `Delete the saved ${section.label.toLowerCase()}?`,
+        message: 'This will remove it from drafts and the public site.',
+        confirmLabel: 'Delete',
+      })) return
       delete draft[key]
       delete published[key]
     }
@@ -394,7 +434,11 @@ function AdminPage() {
   }
 
   async function deleteRequest(request) {
-    if (!window.confirm(`Delete the enquiry from ${request.full_name}? This cannot be undone.`)) return
+    if (!await confirmAction({
+      title: 'Delete this enquiry?',
+      message: `The enquiry from ${request.full_name} will be permanently deleted.`,
+      confirmLabel: 'Delete enquiry',
+    })) return
     const { error } = await supabase.from('care_requests').delete().eq('id', request.id)
     if (error) notify(error.message, 'error')
     else {
@@ -441,56 +485,6 @@ function AdminPage() {
     }
   }
 
-  async function approveCaregiverApplication(application) {
-    const password = typeof application.password === 'string' ? application.password.trim() : ''
-    if (!password) {
-      notify('This caregiver application does not have a dashboard password yet. Ask them to submit one before approving.', 'warning')
-      return
-    }
-
-    try {
-      const response = await fetch('/api/caregiver-approval', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          applicationId: application.id,
-          fullName: application.full_name,
-          email: application.email,
-          password,
-        }),
-      })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result?.error || 'The caregiver approval request could not be completed.')
-      notify(result?.message || 'Caregiver application approved and their dashboard access has been created.')
-      await loadData()
-    } catch (error) {
-      notify(error.message || 'We could not approve the caregiver application.', 'error')
-    }
-  }
-
-  async function assignClientToCaregiver(event, assignment) {
-    event.preventDefault()
-    if (!assignment.caregiverId || !assignment.clientName.trim() || !assignment.careType.trim()) {
-      notify('Choose a caregiver and provide the client name and care type.', 'warning')
-      return
-    }
-
-    const { error } = await supabase.from('caregiver_client_assignments').insert({
-      caregiver_id: assignment.caregiverId,
-      client_name: assignment.clientName.trim(),
-      client_phone: assignment.clientPhone.trim() || null,
-      care_type: assignment.careType.trim(),
-      notes: assignment.notes.trim() || null,
-      status: 'assigned',
-    })
-    if (error) notify(error.message, 'error')
-    else {
-      notify('Client assignment saved.')
-      await loadData()
-      event.currentTarget.reset()
-    }
-  }
-
   async function saveReview(event) {
     event.preventDefault()
     const table = editingReview.source === 'pending' ? 'testimonial_submissions' : 'testimonials'
@@ -511,7 +505,11 @@ function AdminPage() {
   }
 
   async function deleteReview(item, source) {
-    if (!window.confirm(`Permanently delete the testimonial from ${item.name}?`)) return
+    if (!await confirmAction({
+      title: 'Delete this testimonial?',
+      message: `The testimonial from ${item.name} will be permanently deleted.`,
+      confirmLabel: 'Delete testimonial',
+    })) return
     const table = source === 'pending' ? 'testimonial_submissions' : 'testimonials'
     const { error } = await supabase.from(table).delete().eq('id', item.id)
     if (error) notify(error.message, 'error')
@@ -552,7 +550,12 @@ function AdminPage() {
       notify('Add a subject and message first.', 'warning')
       return
     }
-    if (action === 'send' && !window.confirm(`Send this newsletter to ${data.subscribers.length} subscribers?`)) return
+    if (action === 'send' && !await confirmAction({
+      title: 'Send this newsletter?',
+      message: `This will send the newsletter to ${data.subscribers.length} subscribers.`,
+      confirmLabel: 'Send newsletter',
+      dangerous: false,
+    })) return
 
     setBusy(true)
     setNotice('')
@@ -736,11 +739,7 @@ function AdminPage() {
         {activeView === 'caregivers' && (
           <CaregiverManagementView
             applicants={data.caregiverApplications}
-            caregivers={data.caregiverProfiles}
-            assignments={data.caregiverAssignments}
             onStatus={updateCaregiverStatus}
-            onApprove={approveCaregiverApplication}
-            onAssign={assignClientToCaregiver}
           />
         )}
         {activeView === 'testimonials' && (
@@ -809,10 +808,25 @@ function AdminPage() {
             <label>Name<input value={editingReview.name} onChange={(event) => setEditingReview({ ...editingReview, name: event.target.value })} maxLength="120" required /></label>
             <label>Relationship<input value={editingReview.relationship} onChange={(event) => setEditingReview({ ...editingReview, relationship: event.target.value })} maxLength="120" required /></label>
             <label>Location<input value={editingReview.location || ''} onChange={(event) => setEditingReview({ ...editingReview, location: event.target.value })} maxLength="100" placeholder="Optional, for example Chicago, IL" /></label>
-            <label>Rating<select value={editingReview.rating || 5} onChange={(event) => setEditingReview({ ...editingReview, rating: Number(event.target.value) })}>{[5, 4, 3, 2, 1].map((rating) => <option value={rating} key={rating}>{rating} stars</option>)}</select></label>
+            <label>Rating<SearchableSelect value={editingReview.rating || 5} options={[5, 4, 3, 2, 1].map((rating) => ({ value: rating, label: `${rating} stars` }))} onChange={(rating) => setEditingReview({ ...editingReview, rating })} /></label>
             <label>Testimonial<textarea value={editingReview.story} onChange={(event) => setEditingReview({ ...editingReview, story: event.target.value })} rows="5" maxLength="2000" required /></label>
             <div className="admin-modal__actions"><button className="admin-secondary-button" type="button" onClick={() => setEditingReview(null)}>Cancel</button><button className="admin-primary-button" type="submit">Save review</button></div>
           </form>
+        </div>
+      )}
+
+      {confirmation && (
+        <div className="admin-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) finishConfirmation(false) }}>
+          <section className="admin-modal admin-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="admin-confirmation-title" aria-describedby="admin-confirmation-message">
+            <div className="admin-modal__heading">
+              <div><p className="admin-kicker">Please confirm</p><h2 id="admin-confirmation-title">{confirmation.title}</h2></div>
+            </div>
+            <p id="admin-confirmation-message">{confirmation.message}</p>
+            <div className="admin-modal__actions">
+              <button className="admin-secondary-button" type="button" onClick={() => finishConfirmation(false)} autoFocus>Cancel</button>
+              <button className={confirmation.dangerous === false ? 'admin-primary-button' : 'admin-danger-button'} type="button" onClick={() => finishConfirmation(true)}>{confirmation.confirmLabel}</button>
+            </div>
+          </section>
         </div>
       )}
     </div>
@@ -865,142 +879,66 @@ function NotificationsView({ notifications, unreadCount, loading, onMarkRead, on
   )
 }
 
-function CaregiverManagementView({ applicants, caregivers, assignments, onStatus, onApprove, onAssign }) {
-  const [assignmentForm, setAssignmentForm] = useState({
-    caregiverId: '',
-    clientName: '',
-    clientPhone: '',
-    careType: 'Personal care',
-    notes: '',
-  })
-
+function CaregiverManagementView({ applicants, onStatus }) {
   return (
     <section className="admin-workspace">
       <div className="admin-page-heading">
         <div>
-          <p className="admin-kicker">Team operations</p>
-          <h2>Caregiver pipeline</h2>
-          <p>Review applicants, approve caregivers, and assign clients to the right team member.</p>
+          <p className="admin-kicker">Caregiver team</p>
+          <h2>Applications</h2>
+          <p>Contact applicants by email or WhatsApp and keep track of who you have reached.</p>
         </div>
       </div>
 
-      <div className="admin-caregiver-grid">
-        <section className="admin-panel">
-          <div className="admin-panel__heading">
-            <div>
-              <p className="admin-kicker">Applications</p>
-              <h2>Open applicants</h2>
-            </div>
-            <span>{applicants.length}</span>
+      <section className="admin-panel admin-caregiver-applications">
+        <div className="admin-panel__heading">
+          <div>
+            <p className="admin-kicker">Applicants</p>
+            <h2>Caregiver applications</h2>
           </div>
+          <span>{applicants.length}</span>
+        </div>
 
-          {applicants.length === 0 ? (
-            <div className="admin-empty-state"><h3>No applications yet</h3><p>Caregiver applications will appear here.</p></div>
-          ) : (
-            applicants.map((application) => (
-              <article className="admin-caregiver-card" key={application.id}>
-                <div className="admin-caregiver-card__top">
-                  <div>
-                    <strong>{application.full_name}</strong>
-                    <small>{application.city || 'Chicago'} • {application.role || 'Caregiver'}</small>
-                  </div>
-                  <select value={application.status || 'new'} onChange={(event) => onStatus(application, event.target.value)}>
-                    <option value="new">New</option>
-                    <option value="reviewing">Reviewing</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-                </div>
-                <p>{application.email} • {application.phone}</p>
-                <p><strong>Experience:</strong> {application.experience}</p>
-                <p><strong>Availability:</strong> {application.availability}</p>
-                {application.message && <p><strong>Note:</strong> {application.message}</p>}
-                <div className="admin-caregiver-card__actions">
-                  <button type="button" className="admin-primary-button" onClick={() => onApprove(application)} disabled={application.status === 'approved'}>
-                    {application.status === 'approved' ? 'Approved' : 'Approve caregiver'}
-                  </button>
-                </div>
-              </article>
-            ))
-          )}
-        </section>
-
-        <section className="admin-panel">
-          <div className="admin-panel__heading">
-            <div>
-              <p className="admin-kicker">Team</p>
-              <h2>Active caregivers</h2>
-            </div>
-            <span>{caregivers.length}</span>
-          </div>
-
-          {caregivers.length === 0 ? (
-            <div className="admin-empty-state"><h3>No active caregivers</h3><p>Approved applicants will appear here once they are added.</p></div>
-          ) : (
-            caregivers.map((caregiver) => {
-              const assignedClients = assignments.filter((item) => item.caregiver_id === caregiver.id)
+        {applicants.length === 0 ? (
+          <div className="admin-empty-state"><h3>No applications yet</h3><p>New caregiver applications will appear here.</p></div>
+        ) : (
+          <div className="admin-caregiver-grid">
+            {applicants.map((application) => {
+              const contacted = application.status === 'contacted'
+              const whatsappUrl = caregiverWhatsAppUrl(application)
               return (
-                <article className="admin-caregiver-card" key={caregiver.id}>
+                <article className="admin-caregiver-card" key={application.id}>
                   <div className="admin-caregiver-card__top">
                     <div>
-                      <strong>{caregiver.full_name}</strong>
-                      <small>{caregiver.role || 'Caregiver'} • {caregiver.city || 'Chicago'}</small>
+                      <strong>{application.full_name}</strong>
+                      <small>Applied for {application.role || 'caregiving'}</small>
                     </div>
-                    <span className={`admin-status-pill admin-status-pill--${caregiver.status || 'active'}`}>{caregiver.status || 'active'}</span>
+                    <span className={`admin-status-pill admin-status-pill--${contacted ? 'contacted' : 'new'}`}>
+                      {contacted ? 'Contacted' : 'New'}
+                    </span>
                   </div>
-                  <p>{caregiver.email} • {caregiver.phone}</p>
-                  <div className="admin-caregiver-card__list">
-                    <strong>Assigned clients:</strong>
-                    {assignedClients.length ? (
-                      <ul>
-                        {assignedClients.map((assignment) => (
-                          <li key={assignment.id}>{assignment.client_name} <em>({assignment.care_type})</em></li>
-                        ))}
-                      </ul>
-                    ) : <span>None yet</span>}
+                  <div className="admin-caregiver-card__contact">
+                    <p><Icon name="mail" size={16} /><a href={`mailto:${application.email}`}>{application.email}</a></p>
+                    <p><Icon name="whatsapp" size={16} />{application.phone}</p>
+                    <p><Icon name="clock" size={16} />Applied {displayDate(application.created_at, { dateStyle: 'medium' })}</p>
+                  </div>
+                  <div className="admin-caregiver-card__actions">
+                    <a className="admin-secondary-button" href={`mailto:${application.email}`}>Email</a>
+                    {whatsappUrl && <a className="admin-secondary-button" href={whatsappUrl} target="_blank" rel="noreferrer">WhatsApp</a>}
+                    <button
+                      type="button"
+                      className="admin-primary-button"
+                      onClick={() => onStatus(application, 'contacted')}
+                      disabled={contacted}
+                    >
+                      {contacted ? 'Marked contacted' : 'Mark as contacted'}
+                    </button>
                   </div>
                 </article>
               )
-            })
-          )}
-        </section>
-      </div>
-
-      <section className="admin-panel admin-caregiver-assignments">
-        <div className="admin-panel__heading">
-          <div>
-            <p className="admin-kicker">Client placement</p>
-            <h2>Assign a client to a caregiver</h2>
+            })}
           </div>
-        </div>
-        <form className="admin-assignment-form" onSubmit={(event) => onAssign(event, assignmentForm)}>
-          <label>
-            Caregiver
-            <select value={assignmentForm.caregiverId} onChange={(event) => setAssignmentForm((current) => ({ ...current, caregiverId: event.target.value }))}>
-              <option value="">Select a caregiver</option>
-              {caregivers.map((caregiver) => (
-                <option key={caregiver.id} value={caregiver.id}>{caregiver.full_name}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Client name
-            <input value={assignmentForm.clientName} onChange={(event) => setAssignmentForm((current) => ({ ...current, clientName: event.target.value }))} placeholder="Jane Doe" required />
-          </label>
-          <label>
-            Client phone
-            <input value={assignmentForm.clientPhone} onChange={(event) => setAssignmentForm((current) => ({ ...current, clientPhone: event.target.value }))} placeholder="(555) 555-1234" />
-          </label>
-          <label>
-            Care type
-            <input value={assignmentForm.careType} onChange={(event) => setAssignmentForm((current) => ({ ...current, careType: event.target.value }))} placeholder="Personal care" required />
-          </label>
-          <label>
-            Notes
-            <textarea value={assignmentForm.notes} onChange={(event) => setAssignmentForm((current) => ({ ...current, notes: event.target.value }))} rows="3" placeholder="Pickup instructions, care preferences, and any schedule notes." />
-          </label>
-          <button className="admin-primary-button" type="submit">Save assignment</button>
-        </form>
+        )}
       </section>
     </section>
   )

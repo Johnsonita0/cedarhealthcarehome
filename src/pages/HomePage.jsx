@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import AOS from 'aos'
 import 'aos/dist/aos.css'
-import { Brand, FormStatus, Icon, PortalLink } from '../components/UI.jsx'
+import { Brand, FormStatus, Icon, ModalSelect, PortalLink } from '../components/UI.jsx'
 import { defaultSiteContent } from '../data/adminDefaults.js'
 import { useToast } from '../components/ToastProvider.jsx'
 import { supabase } from '../supabaseClient.js'
@@ -290,61 +290,10 @@ function HomePage() {
     fullName: '',
     email: '',
     phone: '',
-    city: '',
-    role: 'Caregiver',
-    experience: '',
-    availability: '',
-    password: '',
-    confirmPassword: '',
-    message: '',
-    backgroundCheck: false,
+    careType: '',
   })
-  const [caregiverStep, setCaregiverStep] = useState(1)
+  const [caregiverSubmitting, setCaregiverSubmitting] = useState(false)
   const [caregiverStatus, setCaregiverStatus] = useState(null)
-
-  const caregiverStepTitles = [
-    'Your details',
-    'Your experience',
-    'Availability and login',
-  ]
-
-  function getCaregiverStepFields(step) {
-    if (step === 1) return ['fullName', 'email', 'phone', 'city']
-    if (step === 2) return ['experience']
-    return ['availability', 'password', 'confirmPassword']
-  }
-
-  function validateCaregiverStep(step) {
-    const values = getCaregiverStepFields(step)
-    for (const field of values) {
-      if (!String(caregiverForm[field]).trim()) return false
-    }
-
-    if (step === 3) {
-      if (caregiverForm.password.length < 8) return false
-      if (caregiverForm.password !== caregiverForm.confirmPassword) return false
-    }
-
-    return true
-  }
-
-  function advanceCaregiverStep() {
-    if (!validateCaregiverStep(caregiverStep)) {
-      const message = caregiverStep === 3
-        ? 'Please add a valid password and confirm it matches before continuing.'
-        : 'Please complete all required fields in this step before continuing.'
-      setCaregiverStatus({ type: 'error', message })
-      return
-    }
-
-    setCaregiverStatus(null)
-    setCaregiverStep((currentStep) => Math.min(currentStep + 1, 3))
-  }
-
-  function goBackCaregiverStep() {
-    setCaregiverStatus(null)
-    setCaregiverStep((currentStep) => Math.max(currentStep - 1, 1))
-  }
 
   useEffect(() => {
     const root = document.documentElement
@@ -523,9 +472,9 @@ function HomePage() {
 
   async function submitCaregiverApplication(event) {
     event.preventDefault()
-
-    if (!validateCaregiverStep(1) || !validateCaregiverStep(2) || !validateCaregiverStep(3)) {
-      setCaregiverStatus({ type: 'error', message: 'Please complete all required fields before submitting your application.' })
+    if (caregiverSubmitting) return
+    if (Object.values(caregiverForm).some((value) => !value.trim())) {
+      setCaregiverStatus({ type: 'error', message: 'Please complete all fields before submitting your application.' })
       return
     }
 
@@ -533,34 +482,22 @@ function HomePage() {
       full_name: caregiverForm.fullName.trim(),
       email: caregiverForm.email.trim(),
       phone: caregiverForm.phone.trim(),
-      city: caregiverForm.city.trim(),
-      role: caregiverForm.role.trim() || 'Caregiver',
-      experience: caregiverForm.experience.trim(),
-      availability: caregiverForm.availability.trim(),
-      password: caregiverForm.password,
-      message: caregiverForm.message.trim(),
-      background_check: caregiverForm.backgroundCheck,
+      role: caregiverForm.careType,
       created_at: new Date().toISOString(),
     }
 
-    if (payload.password.length < 8 || payload.password !== caregiverForm.confirmPassword) {
-      setCaregiverStatus({ type: 'error', message: 'Create a password with at least 8 characters and confirm it matches.' })
-      return
-    }
-
+    setCaregiverSubmitting(true)
+    setCaregiverStatus({ type: 'loading', message: 'Submitting your application…' })
     try {
       if (supabase) {
         const { error } = await supabase.from('caregiver_applications').insert({
           full_name: payload.full_name,
           email: payload.email,
           phone: payload.phone,
-          city: payload.city,
+          city: '',
           role: payload.role,
-          experience: payload.experience,
-          availability: payload.availability,
-          password: payload.password,
-          message: payload.message,
-          background_check: payload.background_check,
+          experience: '',
+          availability: '',
           status: 'new',
         })
         if (error) throw error
@@ -571,26 +508,15 @@ function HomePage() {
         window.localStorage.setItem(key, JSON.stringify(existing))
       }
 
-      setCaregiverStatus({ type: 'success', message: 'Thank you. Your caregiver application has been received. We will create your dashboard access once it is approved by the Cedar team.' })
-      setCaregiverStep(1)
-      setCaregiverForm({
-        fullName: '',
-        email: '',
-        phone: '',
-        city: '',
-        role: 'Caregiver',
-        experience: '',
-        availability: '',
-        password: '',
-        confirmPassword: '',
-        message: '',
-        backgroundCheck: false,
-      })
+      setCaregiverStatus({ type: 'success', message: 'Thank you. Your application has been received. Our team will contact you soon.' })
+      setCaregiverForm({ fullName: '', email: '', phone: '', careType: '' })
       event.currentTarget.reset()
       showToast('Your caregiver application has been submitted.', 'success')
     } catch (error) {
       setCaregiverStatus({ type: 'error', message: error.message || 'We could not submit your application right now. Please try again.' })
       showToast(error.message || 'We could not submit your application right now.', 'error')
+    } finally {
+      setCaregiverSubmitting(false)
     }
   }
 
@@ -862,84 +788,30 @@ function HomePage() {
                 <li>Meaningful client relationships and flexible scheduling</li>
               </ul>
             </div>
-            <form className="caregiver-form" onSubmit={submitCaregiverApplication}>
-              <div className="contact-form__top">
-                <span>Apply to join Cedar</span>
-                <span className="contact-form__required">Step {caregiverStep} of 3</span>
-              </div>
+            <form className="caregiver-form" onSubmit={submitCaregiverApplication} aria-busy={caregiverSubmitting}>
+              <div className="contact-form__top"><span>Apply to join Cedar</span></div>
+              <label htmlFor="caregiver-name">Full name <span>*</span></label>
+              <input id="caregiver-name" value={caregiverForm.fullName} onChange={(event) => setCaregiverForm((current) => ({ ...current, fullName: event.target.value }))} placeholder="Your full name" maxLength="120" autoComplete="name" required />
 
-              <div className="caregiver-form__progress" aria-label="Application progress">
-                {caregiverStepTitles.map((title, index) => (
-                  <div key={title} className={`caregiver-form__step${caregiverStep === index + 1 ? ' is-active' : ''}${caregiverStep > index + 1 ? ' is-complete' : ''}`}>
-                    <span>{index + 1}</span>
-                    <small>{title}</small>
-                  </div>
-                ))}
-              </div>
+              <label htmlFor="caregiver-email">Email address <span>*</span></label>
+              <input id="caregiver-email" type="email" value={caregiverForm.email} onChange={(event) => setCaregiverForm((current) => ({ ...current, email: event.target.value }))} placeholder="you@example.com" maxLength="160" autoComplete="email" required />
 
-              {caregiverStep === 1 && (
-                <>
-                  <label htmlFor="caregiver-name">Full name <span>*</span></label>
-                  <input id="caregiver-name" value={caregiverForm.fullName} onChange={(event) => setCaregiverForm((current) => ({ ...current, fullName: event.target.value }))} placeholder="Your full name" maxLength="120" required />
+              <label htmlFor="caregiver-phone">WhatsApp phone number <span>*</span></label>
+              <input id="caregiver-phone" type="tel" value={caregiverForm.phone} onChange={(event) => setCaregiverForm((current) => ({ ...current, phone: event.target.value }))} placeholder="+1 224 204 3281" maxLength="32" autoComplete="tel" inputMode="tel" required />
 
-                  <label htmlFor="caregiver-email">Email address <span>*</span></label>
-                  <input id="caregiver-email" type="email" value={caregiverForm.email} onChange={(event) => setCaregiverForm((current) => ({ ...current, email: event.target.value }))} placeholder="you@example.com" maxLength="160" required />
-
-                  <label htmlFor="caregiver-phone">Phone number <span>*</span></label>
-                  <input id="caregiver-phone" type="tel" value={caregiverForm.phone} onChange={(event) => setCaregiverForm((current) => ({ ...current, phone: event.target.value }))} placeholder="(123) 456-7890" maxLength="32" required />
-
-                  <label htmlFor="caregiver-city">City <span>*</span></label>
-                  <input id="caregiver-city" value={caregiverForm.city} onChange={(event) => setCaregiverForm((current) => ({ ...current, city: event.target.value }))} placeholder="Chicago, IL" maxLength="80" required />
-                </>
-              )}
-
-              {caregiverStep === 2 && (
-                <>
-                  <label htmlFor="caregiver-role">Position</label>
-                  <select id="caregiver-role" value={caregiverForm.role} onChange={(event) => setCaregiverForm((current) => ({ ...current, role: event.target.value }))}>
-                    <option>Caregiver</option>
-                    <option>Home Health Aide</option>
-                    <option>Certified Nursing Assistant</option>
-                    <option>Skilled Nurse</option>
-                    <option>Companion</option>
-                  </select>
-
-                  <label htmlFor="caregiver-experience">Relevant experience <span>*</span></label>
-                  <textarea id="caregiver-experience" rows="4" value={caregiverForm.experience} onChange={(event) => setCaregiverForm((current) => ({ ...current, experience: event.target.value }))} placeholder="Share your caregiving background, licensure, or experience in home support." maxLength="1500" required />
-                </>
-              )}
-
-              {caregiverStep === 3 && (
-                <>
-                  <label htmlFor="caregiver-availability">Availability <span>*</span></label>
-                  <input id="caregiver-availability" value={caregiverForm.availability} onChange={(event) => setCaregiverForm((current) => ({ ...current, availability: event.target.value }))} placeholder="Full-time, weekends, evenings, etc." maxLength="120" required />
-
-                  <label htmlFor="caregiver-password">Create a dashboard password <span>*</span></label>
-                  <input id="caregiver-password" type="password" value={caregiverForm.password} onChange={(event) => setCaregiverForm((current) => ({ ...current, password: event.target.value }))} placeholder="Create a password with at least 8 characters" minLength="8" maxLength="128" required />
-
-                  <label htmlFor="caregiver-confirm-password">Confirm password <span>*</span></label>
-                  <input id="caregiver-confirm-password" type="password" value={caregiverForm.confirmPassword} onChange={(event) => setCaregiverForm((current) => ({ ...current, confirmPassword: event.target.value }))} placeholder="Re-enter your password" minLength="8" maxLength="128" required />
-
-                  <label htmlFor="caregiver-message">Tell us about yourself</label>
-                  <textarea id="caregiver-message" rows="4" value={caregiverForm.message} onChange={(event) => setCaregiverForm((current) => ({ ...current, message: event.target.value }))} placeholder="What matters to you about helping others at home?" maxLength="2000" />
-
-                  <label className="caregiver-form__checkbox" htmlFor="caregiver-background-check">
-                    <input id="caregiver-background-check" type="checkbox" checked={caregiverForm.backgroundCheck} onChange={(event) => setCaregiverForm((current) => ({ ...current, backgroundCheck: event.target.checked }))} />
-                    <span>I understand Cedar may require a background check and can provide my credentials upon review.</span>
-                  </label>
-                </>
-              )}
-
+              <label htmlFor="caregiver-care-type">Which care service are you applying for? <span>*</span></label>
+              <ModalSelect
+                id="caregiver-care-type"
+                label="Choose the care service you want to apply for"
+                value={caregiverForm.careType}
+                options={services.map((service) => ({ value: service.title, label: service.title }))}
+                onChange={(careType) => setCaregiverForm((current) => ({ ...current, careType }))}
+                placeholder="Select a care service"
+              />
               <div className="contact-form__bottom">
-                {caregiverStep > 1 && (
-                  <button type="button" className="button button--outline" onClick={goBackCaregiverStep}>Back</button>
-                )}
-
-                {caregiverStep < 3 ? (
-                  <button type="button" className="button button--green" onClick={advanceCaregiverStep}>Continue</button>
-                ) : (
-                  <button className="button button--green" type="submit">Apply now</button>
-                )}
+                <button className="button button--green" type="submit" disabled={caregiverSubmitting}>
+                  {caregiverSubmitting ? 'Submitting…' : 'Apply now'}
+                </button>
                 <span>We review applications with care and confidentiality.</span>
               </div>
               <FormStatus status={caregiverStatus} />
