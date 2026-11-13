@@ -10,9 +10,26 @@ const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
 const LegalPage = lazy(() => import('./pages/LegalPage.jsx'))
 const VerifyPage = lazy(() => import('./pages/VerifyPage.jsx'))
 const currentPath = window.location.pathname.replace(/\/+$/, '')
+const isHomeRoute = currentPath === ''
 const isAdminRoute = currentPath === '/admin'
 const isLegalRoute = currentPath === '/privacy' || currentPath === '/terms'
 const isVerifyRoute = currentPath === '/verify'
+
+function shouldShowEntrySplash() {
+  if (!isHomeRoute && !isAdminRoute) return false
+
+  const isRefresh = window.performance.getEntriesByType('navigation')[0]?.type === 'reload'
+  try {
+    const alreadyShown = window.sessionStorage.getItem('cedar-entry-splash-shown') === 'true'
+    if (alreadyShown && !isRefresh) return false
+    window.sessionStorage.setItem('cedar-entry-splash-shown', 'true')
+    return true
+  } catch {
+    return true
+  }
+}
+
+const showEntrySplash = shouldShowEntrySplash()
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -21,9 +38,10 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 }
 
 function App() {
-  const [showSplash, setShowSplash] = useState(true)
+  const [showSplash, setShowSplash] = useState(showEntrySplash)
 
   useEffect(() => {
+    if (!showEntrySplash) return undefined
     const timer = window.setTimeout(() => setShowSplash(false), 6000)
     return () => window.clearTimeout(timer)
   }, [])
@@ -33,11 +51,11 @@ function App() {
       {showSplash && <SiteSplash timed />}
     <ToastProvider>
       {isAdminRoute
-        ? <Suspense fallback={<SiteSplash />}><AdminPage /></Suspense>
+        ? <Suspense fallback={null}><AdminPage /></Suspense>
         : isVerifyRoute
-          ? <Suspense fallback={<SiteSplash />}><VerifyPage /></Suspense>
+          ? <Suspense fallback={null}><VerifyPage /></Suspense>
         : isLegalRoute
-          ? <Suspense fallback={<SiteSplash />}><LegalPage /></Suspense>
+          ? <Suspense fallback={null}><LegalPage /></Suspense>
           : <HomePage />}
     </ToastProvider>
     </>

@@ -231,6 +231,7 @@ body { color: var(--ink); background: #f7f9f5; }
 .newsletter-form__note { color: #748278; }
 
 .site-footer { background: #102f24; }
+.site-footer__links a { overflow-wrap: anywhere; }
 .brand--light .brand__logo { width: 180px; height: 58px; padding: 3px; border-radius: 4px; background: #fff; }
 .site-footer__links > span { color: #d4dfd4; }
 .site-footer__links a { color: #bdc9bf; }

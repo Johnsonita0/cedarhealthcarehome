@@ -1,9 +1,8 @@
 import { randomBytes } from 'node:crypto'
-import { escapeHtml, getPublicSiteUrl, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson, validEmail } from './_shared.js'
+import { escapeHtml, getCareRequestRecipients, getPublicSiteUrl, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson, validEmail } from './_shared.js'
 
 const referenceAlphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 const allowedGenders = new Set(['Male', 'Female'])
-const defaultAdminRecipient = 'cedarhealthcarehome@gmail.com'
 
 function createReferenceCode() {
   const token = Array.from(randomBytes(10), (byte) => referenceAlphabet[byte & 31]).join('')
@@ -76,14 +75,18 @@ export default async function handler(req, res) {
   const siteUrl = getPublicSiteUrl()
   const verifyUrl = `${siteUrl}/verify?reference=${encodeURIComponent(referenceCode)}`
   const { config: resend, missing: missingResend } = getResendConfig()
-  const adminRecipient = resend.CARE_REQUEST_RECIPIENT || defaultAdminRecipient
+  let adminRecipients = []
+  try {
+    adminRecipients = getCareRequestRecipients(resend)
+  } catch (error) {
+    console.error('Caregiver admin email recipients are invalid:', error)
+  }
   let confirmationEmailSent = false
   let adminNotificationSent = false
 
   if (missingResend.length) {
     console.error('Caregiver email configuration is incomplete:', missingResend.join(', '))
   }
-  if (!resend.CARE_REQUEST_RECIPIENT) console.warn('CARE_REQUEST_RECIPIENT is not configured; using the Cedar contact inbox for caregiver notifications.')
   if (!missingResend.length) {
     const applicantEmail = sendEmail(resend, {
       to: email,
@@ -97,8 +100,9 @@ export default async function handler(req, res) {
       }),
     })
 
-    const adminEmail = sendEmail(resend, {
-        to: adminRecipient,
+    const adminEmail = adminRecipients.length
+      ? sendEmail(resend, {
+        to: adminRecipients,
         subject: 'New caregiver application received',
         html: renderBrandedEmail({
           preheader: `New caregiver application from ${fullName}.`,
@@ -108,7 +112,7 @@ export default async function handler(req, res) {
           button: { url: `${siteUrl}/admin`, label: 'Open caregiver applications' },
         }),
         replyTo: email,
-      })
+      }) : Promise.resolve(false)
     const sentEmails = await Promise.all([applicantEmail, adminEmail])
     confirmationEmailSent = sentEmails[0]
     adminNotificationSent = sentEmails[1]

@@ -11,6 +11,13 @@ export function isCaregiverReference(value) {
   return typeof value === 'string' && /^CED-\d{2}-[A-Z0-9]{5}-[A-Z0-9]{5}$/i.test(value)
 }
 
+const cedarNotificationRecipients = [
+  'cedarhealthcarehome@gmail.com',
+  'support@cedarhealthcarehome.com',
+  'admin@cedarhealthcarehome.com',
+  'info@cedarhealthcarehome.com',
+]
+
 export function getSupabaseConfig() {
   const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env
   const missing = []
@@ -46,6 +53,20 @@ export function getResendConfig({ recipient = false } = {}) {
     config: { RESEND_API_KEY, RESEND_FROM_EMAIL, CARE_REQUEST_RECIPIENT },
     missing,
   }
+}
+
+export function getCareRequestRecipients(config) {
+  const configuredRecipients = typeof config.CARE_REQUEST_RECIPIENT === 'string'
+    ? config.CARE_REQUEST_RECIPIENT.split(/[;,]/).map((recipient) => recipient.trim()).filter(Boolean)
+    : []
+  const invalidRecipients = configuredRecipients.filter((recipient) => !validEmail(recipient))
+  if (invalidRecipients.length) {
+    throw new Error(`CARE_REQUEST_RECIPIENT contains ${invalidRecipients.length} invalid email address(es).`)
+  }
+
+  const recipients = new Map(cedarNotificationRecipients.map((recipient) => [recipient.toLowerCase(), recipient]))
+  for (const recipient of configuredRecipients) recipients.set(recipient.toLowerCase(), recipient)
+  return [...recipients.values()]
 }
 
 export function getPublicSiteUrl() {
@@ -122,6 +143,9 @@ export function renderBrandedEmail({ preheader = '', title, intro = '', content 
     { href: privacyUrl, label: 'Privacy policy' },
     { href: termsUrl, label: 'Terms of use' },
   ].map((item) => `<a href="${escapeHtml(item.href)}" style="display:inline-block;margin:4px 7px;color:#315b40;font-size:12px;font-weight:bold;text-decoration:none">${item.label}</a>`).join('')
+  const contactEmails = cedarNotificationRecipients.map((email) => (
+    `<a href="mailto:${escapeHtml(email)}" style="display:inline-block;margin:4px 7px;color:#315b40;font-size:12px;text-decoration:none">${escapeHtml(email)}</a>`
+  )).join('')
 
   return `<!doctype html>
 <html lang="en">
@@ -147,7 +171,8 @@ export function renderBrandedEmail({ preheader = '', title, intro = '', content 
           <div style="margin-bottom:13px">${footerLinks}</div>
           <div style="margin:0 0 13px">${socialLinks.map((item) => `<a href="${escapeHtml(item.href)}" aria-label="${escapeHtml(item.name)}" style="display:inline-block;width:29px;height:29px;margin:0 5px;border:1px solid #cddbd0;border-radius:50%;color:#356346;font-size:11px;font-weight:bold;line-height:29px;text-align:center;text-decoration:none">${item.label}</a>`).join('')}</div>
           <p style="margin:0 0 6px;color:#6d7b71;font-size:11px;line-height:1.6">Cedar Healthcare, LLC · 7412 N Western Ave, Chicago, IL 60645</p>
-          <p style="margin:0;color:#6d7b71;font-size:11px;line-height:1.6"><a href="tel:+12242043281" style="color:#315b40;text-decoration:none">224-204-3281</a> · <a href="mailto:cedarhealthcarehome@gmail.com" style="color:#315b40;text-decoration:none">cedarhealthcarehome@gmail.com</a></p>
+          <p style="margin:0 0 6px;color:#6d7b71;font-size:11px;line-height:1.6"><a href="tel:+12242043281" style="color:#315b40;text-decoration:none">224-204-3281</a></p>
+          <p style="margin:0;color:#6d7b71;font-size:11px;line-height:1.6">${contactEmails}</p>
           <p style="margin:12px 0 0;color:#9aa59c;font-size:10px">© ${new Date().getFullYear()} Cedar Healthcare, LLC</p>
         </td></tr>
       </table>

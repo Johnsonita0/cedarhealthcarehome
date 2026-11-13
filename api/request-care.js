@@ -1,4 +1,4 @@
-import { escapeHtml, getPublicSiteUrl, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson, validEmail } from './_shared.js'
+import { escapeHtml, getCareRequestRecipients, getPublicSiteUrl, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson, validEmail } from './_shared.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -44,6 +44,13 @@ export default async function handler(req, res) {
     console.error('Care request email configuration is incomplete:', missingResend.join(', '))
     return sendJson(res, 200, { ok: true, notificationSent: false })
   }
+  let notificationRecipients
+  try {
+    notificationRecipients = getCareRequestRecipients(resend)
+  } catch (error) {
+    console.error('Care request email recipients are invalid:', error)
+    return sendJson(res, 200, { ok: true, notificationSent: false })
+  }
 
   const emailHtml = renderBrandedEmail({
     preheader: `New care request from ${name}`,
@@ -53,7 +60,7 @@ export default async function handler(req, res) {
     button: { url: `${getPublicSiteUrl()}/admin`, label: 'Open admin inbox' },
   })
   const notificationSent = await sendEmail(resend, {
-    to: resend.CARE_REQUEST_RECIPIENT,
+    to: notificationRecipients,
     subject: `New care request from ${name}`,
     html: emailHtml,
     replyTo: validEmail(contact) ? contact : undefined,

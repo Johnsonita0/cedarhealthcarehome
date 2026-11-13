@@ -1,4 +1,4 @@
-import { escapeHtml, getPublicSiteUrl, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson } from './_shared.js'
+import { escapeHtml, getCareRequestRecipients, getPublicSiteUrl, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson } from './_shared.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -47,6 +47,13 @@ export default async function handler(req, res) {
     console.error('Story submission email configuration is incomplete:', missingResend.join(', '))
     return sendJson(res, 200, { ok: true, notificationSent: false })
   }
+  let notificationRecipients
+  try {
+    notificationRecipients = getCareRequestRecipients(resend)
+  } catch (error) {
+    console.error('Story submission email recipients are invalid:', error)
+    return sendJson(res, 200, { ok: true, notificationSent: false })
+  }
   
   const emailHtml = renderBrandedEmail({
     preheader: `A new testimonial from ${name} is waiting for review.`,
@@ -56,7 +63,7 @@ export default async function handler(req, res) {
     button: { url: `${getPublicSiteUrl()}/admin`, label: 'Review testimonial' },
   })
   const notificationSent = await sendEmail(resend, {
-    to: resend.CARE_REQUEST_RECIPIENT,
+    to: notificationRecipients,
     subject: `A Cedar family story from ${name}`,
     html: emailHtml,
   })

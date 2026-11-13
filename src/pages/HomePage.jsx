@@ -9,6 +9,12 @@ import { supabase } from '../supabaseClient.js'
 const phoneNumber = '224-204-3281'
 const phoneLink = 'tel:+12242043281'
 const emailAddress = 'cedarhealthcarehome@gmail.com'
+const contactEmailAddresses = [
+  'support@cedarhealthcarehome.com',
+  'admin@cedarhealthcarehome.com',
+  'info@cedarhealthcarehome.com',
+  emailAddress,
+]
 const whatsappContactUrl = `https://wa.me/12242043281?text=${encodeURIComponent('Hello Cedar Healthcare, I would like to learn more about your home care services.')}`
 const cardAosAnimations = ['fade-up', 'zoom-in', 'fade-down']
 const cardAosByKey = new Map()
@@ -952,7 +958,7 @@ function HomePage() {
             <div className="site-footer__links">
               <span>Get in touch</span>
               <a href={phoneLink}>{phoneNumber}</a>
-              <a href={`mailto:${emailAddress}`}>{emailAddress}</a>
+              {contactEmailAddresses.map((email) => <a href={`mailto:${email}`} key={email}>{email}</a>)}
               <a href="https://maps.google.com/?q=7412+N+Western+Ave+Chicago+IL+60645" target="_blank" rel="noreferrer">7412 N Western Ave, Chicago, IL</a>
             </div>
             <div className="site-footer__social">
