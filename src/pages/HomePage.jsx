@@ -72,10 +72,10 @@ const heroSlideCandidates = [
     noteDescription: 'Here when it matters.',
   },
   {
-    image: '/licensed-care.svg',
-    alt: 'Cedar-branded illustration of trusted home care with a shield and checkmark',
-    position: 'center',
-    mobilePosition: 'center',
+    image: 'https://images.pexels.com/photos/7446778/pexels-photo-7446778.jpeg?auto=compress&cs=tinysrgb&w=1600',
+    alt: 'A care professional speaking with clients around a table',
+    position: '52% 43%',
+    mobilePosition: '56% 37%',
     eyebrow: 'Licensed and insured home care',
     title: <>Licensed care.<br /><em>Here when it matters.</em></>,
     description: 'Cedar Healthcare is a licensed and insured home care agency. Talk with our team about care that fits your needs.',
@@ -201,11 +201,11 @@ const heroSlideCandidates = [
     position: '54% 44%',
     mobilePosition: '49% 38%',
     eyebrow: 'Professional care, human connection',
-    title: <>Skilled support.<br /><em>Personal attention.</em></>,
-    description: 'Professional health support works best when it comes with patience, respect, and clear communication.',
+    title: <>Thoughtful support.<br /><em>Personal attention.</em></>,
+    description: 'Home-care support works best when it comes with patience, respect, and clear communication.',
     imageCaption: 'Professional and personal',
     noteTitle: 'Care you can count on.',
-    noteDescription: 'Skilled, compassionate support.',
+    noteDescription: 'Respectful, compassionate care.',
   },
   {
     image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
@@ -232,34 +232,22 @@ const heroSlideCandidates = [
     noteDescription: 'We are ready when you are.',
   },
   {
-    image: 'https://images.pexels.com/photos/18459193/pexels-photo-18459193.jpeg?auto=compress&cs=tinysrgb&w=1400',
-    alt: 'A caregiver serving tea to an older woman at home',
-    position: '52% 38%',
-    mobilePosition: '52% 35%',
-    eyebrow: 'Thoughtful help in everyday moments',
-    title: <>A little help.<br />A lot more <em>comfort.</em></>,
-    description: 'Practical, personal support can make familiar routines feel easier and more reassuring.',
-    imageCaption: 'Small moments, thoughtful care',
-    noteTitle: 'A thoughtful touch.',
-    noteDescription: 'Everyday help at home.',
-  },
-  {
     image: 'https://images.pexels.com/photos/6129242/pexels-photo-6129242.jpeg?auto=compress&cs=tinysrgb&w=1600',
     alt: 'A caregiver comforting a client at home',
     position: '50% 40%',
     mobilePosition: '52% 36%',
     eyebrow: 'Professional care, human connection',
-    title: <>Skilled support.<br /><em>Personal attention.</em></>,
-    description: 'Health support delivered with patience, respect, and clear communication.',
+    title: <>Thoughtful support.<br /><em>Personal attention.</em></>,
+    description: 'Home-care support delivered with patience, respect, and clear communication.',
     imageCaption: 'Professional and personal',
     noteTitle: 'Care you can count on.',
-    noteDescription: 'Skilled, compassionate support.',
+    noteDescription: 'Respectful, compassionate care.',
   },
   {
-    image: '/caregiver-welcome.svg',
-    alt: 'Illustration of a caregiver and an older adult sharing a conversation at home',
-    position: 'center',
-    mobilePosition: 'center',
+    image: 'https://images.pexels.com/photos/18459193/pexels-photo-18459193.jpeg?auto=compress&cs=tinysrgb&w=1400',
+    alt: 'A caregiver serving tea to an older woman at home',
+    position: '52% 38%',
+    mobilePosition: '52% 35%',
     eyebrow: 'Join our care team',
     title: <>Make a difference.<br /><em>Care with Cedar.</em></>,
     description: 'Build meaningful connections while helping clients feel supported, respected, and comfortable at home.',
@@ -283,13 +271,8 @@ const services = [
     icon: 'care',
   },
   {
-    title: 'Skilled nursing',
-    description: 'Skilled health support and wellness check-ins, delivered with clear communication and personal attention.',
-    icon: 'health',
-  },
-  {
     title: 'Specialized care',
-    description: 'Personalized support for chronic conditions, recovery after a hospital stay, and changing health needs.',
+    description: 'Personalized non-medical support shaped around individual routines, preferences, and changing day-to-day needs.',
     icon: 'heart',
   },
   {
@@ -333,17 +316,17 @@ const everydayCareMoments = [
 const careFocusAreas = [
   {
     title: 'Changing health needs',
-    description: 'Personalized support that can adapt as health needs and daily routines change.',
+    description: 'Personalized non-medical support that can adapt as daily routines and needs change.',
     icon: 'health',
   },
   {
     title: 'Recovery at home',
-    description: 'A helping hand as you return to familiar routines after a hospital stay.',
+    description: 'Practical non-medical help as you return to familiar routines after a hospital stay.',
     icon: 'heart',
   },
   {
-    title: 'Skilled support',
-    description: 'Health support and wellness check-ins delivered with patience and clear communication.',
+    title: 'Personalized assistance',
+    description: 'Friendly, practical help with daily routines, provided with patience and clear communication.',
     icon: 'care',
   },
 ]
@@ -863,7 +846,7 @@ function HomePage() {
             <div className="section-heading section-heading--center">
               <p className="eyebrow"><span className="eyebrow__line" /> Home care in Chicago, Illinois</p>
               <h2>Care that fits<br /><em>real life.</em></h2>
-              <p>From everyday assistance to skilled and specialized support, Cedar’s services are shaped around each person’s needs, routines, and goals.</p>
+              <p>From everyday assistance to personalized home-care support, Cedar’s services are shaped around each person’s needs, routines, and goals.</p>
             </div>
             <div className="services__grid">
               {services.map((service) => (

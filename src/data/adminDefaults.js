@@ -14,15 +14,15 @@ export const defaultSiteContent = {
   faqs: [
     {
       question: 'What services do you offer?',
-      answer: 'Cedar offers personal care, skilled nursing, specialized care, companionship, homemaker services, and around-the-clock availability. Contact us to discuss which services may fit your needs.',
+      answer: 'Cedar offers personal care, specialized care, companionship, homemaker services, and around-the-clock availability. Contact us to discuss which services may fit your needs.',
     },
     {
       question: 'How do I get started?',
       answer: 'Send a care request using the form on this page or call 224-204-3281. Our team will listen, learn about your routines and goals, and talk through possible next steps.',
     },
     {
-      question: 'Can Cedar help with changing health needs or recovery at home?',
-      answer: 'Our skilled nursing and specialized care services may support ongoing health needs and recovery after a hospital stay. Call us so we can discuss your situation and confirm what services and availability are appropriate.',
+      question: 'Can Cedar adjust support as my needs change?',
+      answer: 'Cedar offers non-medical home-care support tailored to routines, preferences, and day-to-day needs. Contact us to discuss your situation and confirm what services and availability are appropriate.',
     },
     {
       question: 'Where does Cedar Healthcare provide care?',
