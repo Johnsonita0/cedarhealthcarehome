@@ -116,7 +116,7 @@ export function renderNewsletterContent(value) {
   }).join('')
 }
 
-export function renderBrandedEmail({ preheader = '', title, intro = '', content = '', button = null }) {
+export function renderBrandedEmail({ preheader = '', title, intro = '', content = '', button = null, compactFooter = false }) {
   const siteUrl = getPublicSiteUrl()
   const logoUrl = safeWebUrl(process.env.EMAIL_LOGO_URL || `${siteUrl}/cedar-logo.jpeg`)
   const servicesUrl = `${siteUrl}/#services`
@@ -168,11 +168,11 @@ export function renderBrandedEmail({ preheader = '', title, intro = '', content 
           ${content}${buttonHtml}
         </td></tr>
         <tr><td align="center" style="padding:22px 24px 25px;border-top:1px solid #edf1ed;background:#f8faf8">
-          <div style="margin-bottom:13px">${footerLinks}</div>
-          <div style="margin:0 0 13px">${socialLinks.map((item) => `<a href="${escapeHtml(item.href)}" aria-label="${escapeHtml(item.name)}" style="display:inline-block;width:29px;height:29px;margin:0 5px;border:1px solid #cddbd0;border-radius:50%;color:#356346;font-size:11px;font-weight:bold;line-height:29px;text-align:center;text-decoration:none">${item.label}</a>`).join('')}</div>
+          ${compactFooter ? '' : `<div style="margin-bottom:13px">${footerLinks}</div>
+          <div style="margin:0 0 13px">${socialLinks.map((item) => `<a href="${escapeHtml(item.href)}" aria-label="${escapeHtml(item.name)}" style="display:inline-block;width:29px;height:29px;margin:0 5px;border:1px solid #cddbd0;border-radius:50%;color:#356346;font-size:11px;font-weight:bold;line-height:29px;text-align:center;text-decoration:none">${item.label}</a>`).join('')}</div>`}
           <p style="margin:0 0 6px;color:#6d7b71;font-size:11px;line-height:1.6">Cedar Healthcare, LLC · 7412 N Western Ave, Chicago, IL 60645</p>
           <p style="margin:0 0 6px;color:#6d7b71;font-size:11px;line-height:1.6"><a href="tel:+12242043281" style="color:#315b40;text-decoration:none">224-204-3281</a></p>
-          <p style="margin:0;color:#6d7b71;font-size:11px;line-height:1.6">${contactEmails}</p>
+          ${compactFooter ? `<p style="margin:0;color:#6d7b71;font-size:11px;line-height:1.6"><a href="mailto:support@cedarhealthcarehome.com" style="color:#315b40;text-decoration:none">support@cedarhealthcarehome.com</a></p>` : `<p style="margin:0;color:#6d7b71;font-size:11px;line-height:1.6">${contactEmails}</p>`}
           <p style="margin:12px 0 0;color:#9aa59c;font-size:10px">© ${new Date().getFullYear()} Cedar Healthcare, LLC</p>
         </td></tr>
       </table>

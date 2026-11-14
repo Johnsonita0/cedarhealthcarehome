@@ -1213,6 +1213,258 @@ function isUnreadMailThread(thread) {
   return thread.read === false
 }
 
+function escapeEmailHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[character])
+}
+
+function normalizeMailLink(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return ''
+  const candidate = /^[a-z][a-z\d+.-]*:/i.test(raw) ? raw : `https://${raw}`
+  try {
+    const url = new URL(candidate)
+    return ['https:', 'http:', 'mailto:'].includes(url.protocol) ? url.toString() : ''
+  } catch {
+    return ''
+  }
+}
+
+function sanitizeMailPreviewHtml(value) {
+  if (typeof document === 'undefined') return ''
+  const template = document.createElement('template')
+  template.innerHTML = String(value || '')
+  const allowedTags = new Set(['a', 'b', 'br', 'div', 'em', 'i', 'li', 'ol', 'p', 'span', 'strong', 'u', 'ul'])
+  const discardedTags = new Set(['iframe', 'object', 'script', 'style', 'svg'])
+
+  function serialize(node) {
+    if (node.nodeType === 3) return escapeEmailHtml(node.nodeValue || '')
+    if (node.nodeType !== 1) return ''
+    const tag = node.tagName.toLowerCase()
+    if (discardedTags.has(tag)) return ''
+    const children = [...node.childNodes].map(serialize).join('')
+    if (!allowedTags.has(tag)) return children
+    if (tag === 'br') return '<br>'
+    if (tag === 'a') {
+      const href = normalizeMailLink(node.getAttribute('href'))
+      return href ? `<a href="${escapeEmailHtml(href)}" target="_blank" rel="noopener noreferrer">${children}</a>` : children
+    }
+    if (tag === 'span') {
+      const styles = []
+      const color = node.style.color || ''
+      const fontSize = node.style.fontSize || ''
+      if (/^#[0-9a-f]{6}$/i.test(color) || /^rgb\(\s*(\d{1,3}\s*,\s*){2}\d{1,3}\s*\)$/i.test(color)) styles.push(`color:${color}`)
+      if (['12px', '14px', '16px', '18px', '20px', '24px'].includes(fontSize)) styles.push(`font-size:${fontSize}`)
+      return `<span${styles.length ? ` style="${styles.join(';')}"` : ''}>${children}</span>`
+    }
+    return `<${tag}>${children}</${tag}>`
+  }
+
+  return [...template.content.childNodes].map(serialize).join('')
+}
+
+function AdminMailPreview({ from, to, subject, messageHtml, messageText }) {
+  const safeHtml = sanitizeMailPreviewHtml(messageHtml)
+    || escapeEmailHtml(messageText).replace(/\n/g, '<br>')
+
+  return (
+    <div className="admin-mail-preview__card">
+      <header><img src={cedarLogo} alt="Cedar Healthcare" /><span>New email</span></header>
+      <dl>
+        <div><dt>From</dt><dd>{from || 'Choose a Cedar address'}</dd></div>
+        <div><dt>To</dt><dd>{to || 'Recipient email'}</dd></div>
+        <div><dt>Subject</dt><dd>{subject || '(No subject)'}</dd></div>
+      </dl>
+      <div className="admin-mail-preview__message" dangerouslySetInnerHTML={{ __html: safeHtml || '<span class="admin-mail-preview__placeholder">Your message will appear here.</span>' }} />
+      <footer>Cedar Healthcare · Compassionate care, every day</footer>
+    </div>
+  )
+}
+
+function MailRichTextEditor({ value, attachments, onChange, onAttachmentsChange, onError }) {
+  const editorRef = useRef(null)
+  const fileInputRef = useRef(null)
+  const savedRangeRef = useRef(null)
+  const [colorMenuOpen, setColorMenuOpen] = useState(false)
+  const [sizeMenuOpen, setSizeMenuOpen] = useState(false)
+  const [linkEditorOpen, setLinkEditorOpen] = useState(false)
+  const [linkHref, setLinkHref] = useState('')
+  const colors = ['#07520b', '#176132', '#405548', '#9b4b3b', '#1d4ed8', '#6b21a8']
+  const sizes = [12, 14, 16, 18, 20, 24]
+  const maxAttachmentBytes = 3 * 1024 * 1024
+
+  useEffect(() => {
+    if (editorRef.current && editorRef.current.innerHTML !== value) editorRef.current.innerHTML = value || ''
+  }, [value])
+
+  function updateMessage() {
+    if (!editorRef.current) return
+    onChange({
+      messageHtml: editorRef.current.innerHTML,
+      messageText: editorRef.current.innerText.replace(/\u00a0/g, ' ').trim(),
+    })
+  }
+
+  function keepEditorSelection(event) {
+    event.preventDefault()
+  }
+
+  function runCommand(command) {
+    editorRef.current?.focus()
+    document.execCommand(command, false, null)
+    updateMessage()
+  }
+
+  function applyInlineStyle(property, valueToApply) {
+    const selection = window.getSelection()
+    if (!selection?.rangeCount || !editorRef.current) return
+    const range = selection.getRangeAt(0)
+    if (range.collapsed || !editorRef.current.contains(range.commonAncestorContainer)) {
+      onError('Select message text before applying formatting.')
+      return
+    }
+    const span = document.createElement('span')
+    span.style.setProperty(property, valueToApply)
+    span.appendChild(range.extractContents())
+    range.insertNode(span)
+    selection.removeAllRanges()
+    const nextRange = document.createRange()
+    nextRange.selectNodeContents(span)
+    selection.addRange(nextRange)
+    updateMessage()
+    editorRef.current.focus()
+    onError('')
+  }
+
+  function openLinkEditor() {
+    const selection = window.getSelection()
+    savedRangeRef.current = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : null
+    setLinkHref('')
+    setLinkEditorOpen(true)
+  }
+
+  function insertLink(event) {
+    event.preventDefault()
+    const href = normalizeMailLink(linkHref)
+    if (!href || !editorRef.current) {
+      onError('Enter a valid website address or mailto link.')
+      return
+    }
+    editorRef.current.focus()
+    const selection = window.getSelection()
+    let range = savedRangeRef.current
+    if (!range || !editorRef.current.contains(range.commonAncestorContainer)) {
+      range = document.createRange()
+      range.selectNodeContents(editorRef.current)
+      range.collapse(false)
+    }
+    selection.removeAllRanges()
+    selection.addRange(range)
+    const link = document.createElement('a')
+    link.href = href
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    if (range.collapsed) link.textContent = href
+    else link.appendChild(range.extractContents())
+    range.insertNode(link)
+    selection.removeAllRanges()
+    const nextRange = document.createRange()
+    nextRange.selectNodeContents(link)
+    selection.addRange(nextRange)
+    setLinkEditorOpen(false)
+    updateMessage()
+    onError('')
+  }
+
+  function readFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = String(reader.result || '')
+        const separatorIndex = dataUrl.indexOf(',')
+        if (separatorIndex < 0) reject(new Error(`Could not read ${file.name}.`))
+        else resolve({
+          filename: file.name,
+          content: dataUrl.slice(separatorIndex + 1),
+          contentType: file.type || 'application/octet-stream',
+          size: file.size,
+        })
+      }
+      reader.onerror = () => reject(new Error(`Could not read ${file.name}.`))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  async function addAttachments(event) {
+    const files = Array.from(event.target.files || [])
+    event.target.value = ''
+    if (attachments.length + files.length > 10) {
+      onError('Add no more than 10 attachments.')
+      return
+    }
+    const totalBytes = attachments.reduce((total, attachment) => total + attachment.size, 0)
+      + files.reduce((total, file) => total + file.size, 0)
+    if (totalBytes > maxAttachmentBytes) {
+      onError('Attachments must total 3 MB or less.')
+      return
+    }
+    try {
+      const added = await Promise.all(files.map(readFile))
+      onAttachmentsChange([...attachments, ...added])
+      onError('')
+    } catch (attachmentError) {
+      onError(attachmentError.message)
+    }
+  }
+
+  return (
+    <div className="admin-mail-editor">
+      <div className="admin-mail-editor__toolbar" role="toolbar" aria-label="Message formatting">
+        <button type="button" aria-label="Bold" title="Bold" onMouseDown={keepEditorSelection} onClick={() => runCommand('bold')}><Icon name="bold" size={16} /></button>
+        <button type="button" aria-label="Italic" title="Italic" onMouseDown={keepEditorSelection} onClick={() => runCommand('italic')}><Icon name="italic" size={16} /></button>
+        <button type="button" aria-label="Underline" title="Underline" onMouseDown={keepEditorSelection} onClick={() => runCommand('underline')}><Icon name="underline" size={16} /></button>
+        <div className="admin-mail-editor__tool">
+          <button type="button" aria-label="Text color" title="Text color" aria-expanded={colorMenuOpen} onMouseDown={keepEditorSelection} onClick={() => { setColorMenuOpen((open) => !open); setSizeMenuOpen(false) }}><Icon name="palette" size={16} /></button>
+          {colorMenuOpen && <div className="admin-mail-editor__popup" aria-label="Text color">{colors.map((color) => <button type="button" key={color} aria-label={`Set text color ${color}`} title={color} style={{ backgroundColor: color }} onMouseDown={keepEditorSelection} onClick={() => { applyInlineStyle('color', color); setColorMenuOpen(false) }} />)}</div>}
+        </div>
+        <div className="admin-mail-editor__tool">
+          <button type="button" aria-label="Text size" title="Text size" aria-expanded={sizeMenuOpen} onMouseDown={keepEditorSelection} onClick={() => { setSizeMenuOpen((open) => !open); setColorMenuOpen(false) }}><Icon name="textSize" size={16} /></button>
+          {sizeMenuOpen && <div className="admin-mail-editor__size-menu" aria-label="Text size">{sizes.map((size) => <button type="button" key={size} onMouseDown={keepEditorSelection} onClick={() => { applyInlineStyle('font-size', `${size}px`); setSizeMenuOpen(false) }}>{size}px</button>)}</div>}
+        </div>
+        <button type="button" aria-label="Add link" title="Add link" onMouseDown={keepEditorSelection} onClick={openLinkEditor}><Icon name="link" size={16} /></button>
+        <button type="button" aria-label="Attach file" title="Attach file" onMouseDown={keepEditorSelection} onClick={() => fileInputRef.current?.click()}><Icon name="attachment" size={16} /></button>
+        <input ref={fileInputRef} className="admin-mail-editor__file" type="file" multiple onChange={addAttachments} aria-label="Attach files" />
+      </div>
+      {linkEditorOpen && <form className="admin-mail-editor__link-form" onSubmit={insertLink}><input type="text" value={linkHref} onChange={(event) => setLinkHref(event.target.value)} placeholder="https://example.com or mailto:name@example.com" aria-label="Link address" required /><button className="admin-secondary-button" type="button" onClick={() => setLinkEditorOpen(false)}>Cancel</button><button className="admin-primary-button" type="submit">Insert link</button></form>}
+      <div
+        ref={editorRef}
+        className="admin-mail-editor__body"
+        contentEditable
+        role="textbox"
+        aria-multiline="true"
+        aria-label="Email message"
+        data-placeholder="Write your message…"
+        onInput={updateMessage}
+        onPaste={(event) => {
+          event.preventDefault()
+          document.execCommand('insertText', false, event.clipboardData.getData('text/plain'))
+          updateMessage()
+        }}
+        suppressContentEditableWarning
+      />
+      <ul className="admin-mail-attachments" aria-label="Email attachments">
+        {attachments.map((attachment, index) => <li key={`${attachment.filename}-${index}`}><span>{attachment.filename} · {(attachment.size / 1024).toFixed(0)} KB</span><button type="button" aria-label={`Remove ${attachment.filename}`} onClick={() => onAttachmentsChange(attachments.filter((_, itemIndex) => itemIndex !== index))}>Remove</button></li>)}
+      </ul>
+      <small className="admin-mail-editor__hint">Bold, italic, underline, color, size, links, and attachments · 3 MB max total</small>
+    </div>
+  )
+}
+
 function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
   const [mailboxes, setMailboxes] = useState([])
   const [selectedAddress, setSelectedAddress] = useState('')
@@ -1229,7 +1481,10 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
   const [busyAction, setBusyAction] = useState('')
   const [error, setError] = useState('')
   const [reply, setReply] = useState('')
-  const [compose, setCompose] = useState({ from: '', to: '', subject: '', message: '' })
+  const [compose, setCompose] = useState({ from: '', to: '', subject: '', messageHtml: '', messageText: '', attachments: [] })
+  const senderOptions = mailboxes
+    .filter((mailbox) => mailbox.configured)
+    .map((mailbox) => ({ value: mailbox.address, label: `${mailbox.label} · ${mailbox.fromName} <${mailbox.address}>` }))
   const selectedThread = threads.find((thread) => thread.id === selectedThreadId)
   const selectedMailbox = mailboxes.find((mailbox) => mailbox.address === selectedAddress)
 
@@ -1300,7 +1555,20 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
     setThreadLoading(true)
     requestAdminMail(session, { action: 'thread', address: selectedAddress, threadId: selectedThreadId })
       .then((result) => {
-        if (active) setMessages(Array.isArray(result.emails) ? result.emails : [])
+        if (!active) return
+        setMessages(Array.isArray(result.emails) ? result.emails : [])
+        if (Number.isFinite(result.unread)) {
+          setMailboxes((current) => {
+            const updated = current.map((mailbox) => mailbox.address === selectedAddress
+              ? { ...mailbox, unread: result.unread }
+              : mailbox)
+            onUnreadCountChange(updated.reduce((total, mailbox) => total + (Number(mailbox.unread) || 0), 0))
+            return updated
+          })
+          setThreads((current) => current.map((thread) => thread.id === selectedThreadId
+            ? { ...thread, read: true }
+            : thread))
+        }
       })
       .catch((requestError) => {
         if (active) setError(requestError.message)
@@ -1309,7 +1577,7 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
         if (active) setThreadLoading(false)
       })
     return () => { active = false }
-  }, [session, selectedAddress, selectedThreadId, mailboxes, threadRefresh])
+  }, [session, selectedAddress, selectedThreadId, threadRefresh, mailboxRefresh, onUnreadCountChange])
 
   async function sendReply(event) {
     event.preventDefault()
@@ -1371,9 +1639,11 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
         address: compose.from,
         to: compose.to,
         subject: compose.subject,
-        message: compose.message,
+        messageHtml: compose.messageHtml,
+        messageText: compose.messageText,
+        attachments: compose.attachments,
       })
-      setCompose((current) => ({ ...current, to: '', subject: '', message: '' }))
+      setCompose((current) => ({ ...current, to: '', subject: '', messageHtml: '', messageText: '', attachments: [] }))
       setFolder('sent')
       setMailView('inbox')
       setThreadRefresh((value) => value + 1)
@@ -1386,10 +1656,6 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
   }
 
   function selectThread(thread) {
-    if (isUnreadMailThread(thread)) {
-      onUnreadCountChange((current) => Math.max(0, current - 1))
-      setThreads((current) => current.map((item) => item.id === thread.id ? { ...item, read: true } : item))
-    }
     setSelectedThreadId(thread.id)
     setReply('')
     setError('')
@@ -1418,7 +1684,7 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
             <div className="admin-mailbox-list">
               {mailboxes.map((mailbox) => (
                 <button type="button" key={mailbox.address} className={`admin-mailbox-choice${selectedAddress === mailbox.address ? ' is-selected' : ''}`} onClick={() => setSelectedAddress(mailbox.address)}>
-                  <span><strong>{mailbox.name}</strong><small>{mailbox.address}</small>{mailbox.lastReceived && <small>Last received {displayDate(mailbox.lastReceived, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</small>}</span>
+                  <span><strong>{mailbox.label}</strong><small>{mailbox.address}</small>{mailbox.lastReceived && <small>Last received {displayDate(mailbox.lastReceived, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</small>}</span>
                   {mailbox.unread > 0 && <em>{mailbox.unread > 99 ? '99+' : mailbox.unread}</em>}
                   {!mailbox.configured && <small className="admin-mailbox-choice__status">Not found in Resend</small>}
                 </button>
@@ -1456,7 +1722,7 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
                     <div className="admin-mail-messages">
                       {threadLoading ? <p className="admin-muted">Loading messages…</p> : messages.map((message) => (
                         <article className={`admin-mail-message${message.direction === 'outbound' ? ' is-outbound' : ''}`} key={message.id}>
-                          <header><strong>{mailAddressLabel(message.from)}</strong><time>{displayDate(message.created_at || message.sent_at || message.received_at, { dateStyle: 'medium', timeStyle: 'short' })}</time></header>
+                          <header><div className="admin-mail-message__addresses"><strong>From: {mailAddressLabel(message.from)}</strong><small>To: {mailAddressLabel(message.to)}</small></div><time>{displayDate(message.created_at || message.sent_at || message.received_at, { dateStyle: 'medium', timeStyle: 'short' })}</time></header>
                           <p>{mailMessageText(message) || 'This message has no text content.'}</p>
                         </article>
                       ))}
@@ -1465,7 +1731,7 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
                       <form className="admin-mail-reply" onSubmit={sendReply}>
                         <label htmlFor="admin-mail-reply">Reply from {selectedAddress}</label>
                         <textarea id="admin-mail-reply" value={reply} onChange={(event) => setReply(event.target.value)} maxLength="10000" rows="4" placeholder="Write a thoughtful reply…" required />
-                        <div><small>Your reply is sent with Cedar’s branded email template.</small><button className="admin-primary-button" type="submit" disabled={Boolean(busyAction) || !reply.trim()}>{busyAction === 'reply' ? 'Sending…' : 'Send reply'}</button></div>
+                        <div><small>Your reply is branded; Cedar Gmail receives a hidden copy.</small><button className="admin-primary-button" type="submit" disabled={Boolean(busyAction) || !reply.trim()}>{busyAction === 'reply' ? 'Sending…' : 'Send reply'}</button></div>
                       </form>
                     )}
                   </>
@@ -1477,15 +1743,27 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
       ) : (
         <div className="admin-mail-compose-layout">
           <form className="admin-panel admin-mail-compose" onSubmit={sendNewMessage}>
-            <label>From<select value={compose.from} onChange={(event) => setCompose((current) => ({ ...current, from: event.target.value }))} required>{mailboxes.map((mailbox) => <option value={mailbox.address} key={mailbox.address} disabled={!mailbox.configured}>{mailbox.fromName} &lt;{mailbox.address}&gt;{mailbox.configured ? '' : ' (not found in Resend)'}</option>)}</select></label>
+            <label>From<SearchableSelect id="admin-mail-from" value={compose.from} options={senderOptions} onChange={(value) => setCompose((current) => ({ ...current, from: value }))} placeholder="Search Cedar addresses" required /></label>
             <label>To<input type="email" value={compose.to} onChange={(event) => setCompose((current) => ({ ...current, to: event.target.value }))} placeholder="client@example.com" required /></label>
             <label>Subject<input value={compose.subject} onChange={(event) => setCompose((current) => ({ ...current, subject: event.target.value }))} maxLength="200" placeholder="How can we help?" required /></label>
-            <label>Message<textarea value={compose.message} onChange={(event) => setCompose((current) => ({ ...current, message: event.target.value }))} maxLength="10000" rows="12" placeholder="Write your message…" required /></label>
-            <div className="admin-mail-compose__footer"><small>Sent through Resend as a Cedar-branded email. Replies are managed in the selected Resend inbox.</small><div><button className="admin-secondary-button" type="button" onClick={() => setMailView('inbox')}>Cancel</button><button className="admin-primary-button" type="submit" disabled={Boolean(busyAction) || !mailboxes.some((mailbox) => mailbox.address === compose.from && mailbox.configured)}>{busyAction === 'compose' ? 'Sending…' : 'Send email'}</button></div></div>
+            <div className="admin-mail-message-field"><span>Message</span><MailRichTextEditor
+              value={compose.messageHtml}
+              attachments={compose.attachments}
+              onChange={(message) => setCompose((current) => ({ ...current, ...message }))}
+              onAttachmentsChange={(attachments) => setCompose((current) => ({ ...current, attachments }))}
+              onError={setError}
+            /></div>
+            <div className="admin-mail-compose__footer"><small>Sent through Resend as a Cedar-branded email. Replies are managed in the selected Resend inbox. Cedar Gmail receives a hidden copy.</small><div><button className="admin-secondary-button" type="button" onClick={() => setMailView('inbox')}>Cancel</button><button className="admin-primary-button" type="submit" disabled={Boolean(busyAction) || !compose.messageText.trim() || !mailboxes.some((mailbox) => mailbox.address === compose.from && mailbox.configured)}>{busyAction === 'compose' ? 'Sending…' : 'Send email'}</button></div></div>
           </form>
           <aside className="admin-mail-preview">
             <p className="admin-kicker">Branded preview</p>
-            <NewsletterTemplatePreview draft={{ subject: compose.subject, body: compose.message }} title="Client email preview" intro="A message from Cedar Healthcare." ctaLabel="Talk with Cedar" placeholder="Your message will appear here." />
+            <AdminMailPreview
+              from={senderOptions.find((option) => option.value === compose.from)?.label || compose.from}
+              to={compose.to}
+              subject={compose.subject}
+              messageHtml={compose.messageHtml}
+              messageText={compose.messageText}
+            />
           </aside>
         </div>
       )}
@@ -1543,6 +1821,7 @@ function NewsletterTemplatePreview({
   intro = 'A thoughtful update from Cedar Healthcare.',
   ctaLabel = 'Visit Cedar Healthcare',
   placeholder = 'Your newsletter message and images will appear here.',
+  htmlContent,
 }) {
   const body = draft.body || ''
   const lines = body.split(/\r?\n/)
@@ -1577,7 +1856,11 @@ function NewsletterTemplatePreview({
         <div className="admin-email-preview__body">
           <h2>{draft.subject || 'Your newsletter subject'}</h2>
           <p className="admin-email-preview__intro">{intro}</p>
-          {body.trim() ? lines.map(renderLine) : <p className="admin-email-preview__placeholder">{placeholder}</p>}
+          {htmlContent !== undefined
+            ? htmlContent.trim()
+              ? <div className="admin-email-preview__rich" dangerouslySetInnerHTML={{ __html: sanitizeMailPreviewHtml(htmlContent) }} />
+              : <p className="admin-email-preview__placeholder">{placeholder}</p>
+            : body.trim() ? lines.map(renderLine) : <p className="admin-email-preview__placeholder">{placeholder}</p>}
           <a className="admin-email-preview__cta" href={publicSiteUrl}>{ctaLabel}</a>
         </div>
         <footer>

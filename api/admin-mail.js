@@ -1,13 +1,16 @@
 import { randomUUID } from 'node:crypto'
+import sanitizeHtml from 'sanitize-html'
 import { renderBrandedEmail, renderNewsletterContent, sendJson, validEmail } from './_shared.js'
 
 const cedarAdminUserId = 'bb9a9a8e-83b6-4c7a-b101-dcfdfe9fd20c'
+const cedarAuditEmail = 'cedarhealthcarehome@gmail.com'
 const inboxDefinitions = [
-  { address: 'info@cedarhealthcarehome.com', name: 'Cedar Information', fromName: 'Cedar Healthcare' },
-  { address: 'admin@cedarhealthcarehome.com', name: 'Cedar Admin', fromName: 'Cedar Healthcare Admin' },
-  { address: 'support@cedarhealthcarehome.com', name: 'Cedar Support', fromName: 'Cedar Healthcare Support' },
+  { address: 'info@cedarhealthcarehome.com', label: 'Info', name: 'Cedar Information', fromName: 'Cedar Healthcare Info' },
+  { address: 'admin@cedarhealthcarehome.com', label: 'Admin', name: 'Cedar Admin', fromName: 'Cedar Healthcare Admin' },
+  { address: 'support@cedarhealthcarehome.com', label: 'Inbox', name: 'Cedar Support', fromName: 'Cedar Healthcare Support' },
 ]
 const idPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const maxEmailAttachmentBytes = 3 * 1024 * 1024
 
 function queryValue(req, key) {
   const value = req.query?.[key]
@@ -92,6 +95,7 @@ async function listResendInboxes() {
 function publicMailbox(definition, inbox) {
   return {
     address: definition.address,
+    label: definition.label,
     name: inbox?.name || definition.name,
     fromName: inbox?.from_name || definition.fromName,
     configured: Boolean(inbox),
@@ -102,10 +106,22 @@ function publicMailbox(definition, inbox) {
 
 async function getMailboxes() {
   const inboxes = await listResendInboxes()
-  return inboxDefinitions.map((definition) => {
+  const mailboxes = inboxDefinitions.map((definition) => {
     const match = inboxes.find((inbox) => inbox.email_address?.toLowerCase() === definition.address)
-    return publicMailbox(definition, match || null)
+    return { definition, inbox: match || null }
   })
+  await Promise.all(mailboxes.map(async ({ definition, inbox }) => {
+    if (inbox && inbox.from_name !== definition.fromName) {
+      await resendRequest(`/inboxes/${encodeURIComponent(inbox.id || definition.address)}`, {
+        method: 'PATCH',
+        body: { from_name: definition.fromName },
+      })
+    }
+  }))
+  return mailboxes.map(({ definition, inbox }) => publicMailbox(
+    definition,
+    inbox ? { ...inbox, from_name: definition.fromName } : null,
+  ))
 }
 
 function getInboxDefinition(address) {
@@ -122,7 +138,66 @@ function getMessageHtml(subject, message, intro) {
     title: subject,
     intro,
     content: renderNewsletterContent(message),
+    compactFooter: true,
   })
+}
+
+function getRichMessageHtml(subject, message, intro) {
+  const content = sanitizeHtml(message, {
+    allowedTags: ['a', 'b', 'br', 'div', 'em', 'i', 'li', 'ol', 'p', 'span', 'strong', 'u', 'ul'],
+    allowedAttributes: { a: ['href', 'target', 'rel'], span: ['style'] },
+    allowedStyles: {
+      '*': {
+        color: [/^#[0-9a-f]{3,8}$/i, /^rgb\(\s*(\d{1,3}\s*,\s*){2}\d{1,3}\s*\)$/i],
+        'font-size': [/^(12|14|16|18|20|24)px$/],
+      },
+    },
+    allowedSchemes: ['http', 'https', 'mailto'],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform('a', { target: '_blank', rel: 'noopener noreferrer' }, true),
+    },
+  })
+  return renderBrandedEmail({
+    preheader: subject,
+    title: subject,
+    intro,
+    content,
+    compactFooter: true,
+  })
+}
+
+function parseEmailAttachments(value) {
+  if (value === undefined) return { attachments: [], error: '' }
+  if (!Array.isArray(value) || value.length > 10) return { attachments: [], error: 'Add no more than 10 attachments.' }
+
+  const attachments = []
+  let totalBytes = 0
+  for (const attachment of value) {
+    if (!attachment || typeof attachment.filename !== 'string'
+      || !attachment.filename.trim() || attachment.filename.length > 255 || /[\r\n\0]/.test(attachment.filename)
+      || typeof attachment.content !== 'string' || !attachment.content
+      || attachment.content.length > Math.ceil(maxEmailAttachmentBytes / 3) * 4
+      || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(attachment.content)) {
+      return { attachments: [], error: 'One of the attachments is invalid.' }
+    }
+
+    const contentType = typeof attachment.contentType === 'string' ? attachment.contentType : ''
+    if (!/^[\w.+-]+\/[\w.+-]+$/.test(contentType)) {
+      return { attachments: [], error: 'One of the attachment types is invalid.' }
+    }
+
+    const byteLength = Buffer.from(attachment.content, 'base64').length
+    totalBytes += byteLength
+    if (!byteLength || totalBytes > maxEmailAttachmentBytes) {
+      return { attachments: [], error: 'Attachments must total 3 MB or less.' }
+    }
+    attachments.push({
+      filename: attachment.filename,
+      content: attachment.content,
+      content_type: contentType,
+    })
+  }
+  return { attachments, error: '' }
 }
 
 export default async function handler(req, res) {
@@ -159,8 +234,15 @@ export default async function handler(req, res) {
         }
         const threadPath = getThreadPath(address, threadId)
         await resendRequest(threadPath, { method: 'PATCH', body: { read: true } })
-        const result = await resendRequest(`${threadPath}/emails?limit=100`)
-        return sendJson(res, 200, { emails: result.data || [], hasMore: Boolean(result.has_more) })
+        const [result, inbox] = await Promise.all([
+          resendRequest(`${threadPath}/emails?limit=100`),
+          resendRequest(`/inboxes/${encodeURIComponent(address)}`),
+        ])
+        return sendJson(res, 200, {
+          emails: result.data || [],
+          hasMore: Boolean(result.has_more),
+          unread: Number(inbox.unread) || 0,
+        })
       }
 
       return sendJson(res, 400, { error: 'Choose a valid mail action.' })
@@ -201,7 +283,7 @@ export default async function handler(req, res) {
       const path = `${getThreadPath(address, body.threadId)}/emails/${encodeURIComponent(body.emailId)}/reply`
       const result = await resendRequest(path, {
         method: 'POST',
-        body: { html, text: message },
+        body: { html, text: message, bcc: [cedarAuditEmail] },
         idempotencyKey: `cedar-reply-${randomUUID()}`,
       })
       return sendJson(res, 200, { ok: true, emailId: result.id })
@@ -210,7 +292,10 @@ export default async function handler(req, res) {
     if (body.action === 'compose') {
       const recipient = typeof body.to === 'string' ? body.to.trim() : ''
       const subject = typeof body.subject === 'string' ? body.subject.trim() : ''
-      const message = typeof body.message === 'string' ? body.message.trim() : ''
+      const message = typeof body.messageText === 'string'
+        ? body.messageText.trim()
+        : typeof body.message === 'string' ? body.message.trim() : ''
+      const messageHtml = typeof body.messageHtml === 'string' ? body.messageHtml : ''
       if (!validEmail(recipient)) return sendJson(res, 400, { error: 'Enter a valid recipient email address.' })
       if (!subject || subject.length > 200 || /[\r\n]/.test(subject)) {
         return sendJson(res, 400, { error: 'Add a subject of no more than 200 characters.' })
@@ -218,11 +303,25 @@ export default async function handler(req, res) {
       if (!message || message.length > 10000) {
         return sendJson(res, 400, { error: 'Write a message of no more than 10,000 characters.' })
       }
+      if (messageHtml.length > 50000) {
+        return sendJson(res, 400, { error: 'The formatted message is too long. Keep it under 50,000 characters.' })
+      }
+      const parsedAttachments = parseEmailAttachments(body.attachments)
+      if (parsedAttachments.error) return sendJson(res, 400, { error: parsedAttachments.error })
 
-      const html = getMessageHtml(subject, message, 'A message from Cedar Healthcare.')
+      const html = messageHtml
+        ? getRichMessageHtml(subject, messageHtml, 'A message from Cedar Healthcare.')
+        : getMessageHtml(subject, message, 'A message from Cedar Healthcare.')
       const draft = await resendRequest(`/inboxes/${encodeURIComponent(address)}/drafts`, {
         method: 'POST',
-        body: { to: [recipient], subject, html, text: message },
+        body: {
+          to: [recipient],
+          bcc: [cedarAuditEmail],
+          subject,
+          html,
+          text: message,
+          ...(parsedAttachments.attachments.length ? { attachments: parsedAttachments.attachments } : {}),
+        },
         idempotencyKey: `cedar-compose-${randomUUID()}`,
       })
       if (!draft.id) throw new Error('The email draft was created without an ID, so it could not be sent.')

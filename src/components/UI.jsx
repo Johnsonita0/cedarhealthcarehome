@@ -42,6 +42,13 @@ export function Icon({ name, size = 22, className = '' }) {
     close: <><path d="m6 6 12 12M18 6 6 18" /></>,
     spark: <><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" /><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z" /></>,
     search: <><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></>,
+    bold: <><path d="M7 5h6a3 3 0 0 1 0 6H7z" /><path d="M7 11h7a4 4 0 0 1 0 8H7z" /></>,
+    italic: <><path d="M10 5h9M5 19h9M14 5 10 19" /></>,
+    underline: <><path d="M7 4v6a5 5 0 0 0 10 0V4M5 20h14" /></>,
+    link: <><path d="M10 13a5 5 0 0 0 7.1 0l2-2A5 5 0 0 0 12 3.9l-1.1 1.1" /><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1" /></>,
+    attachment: <><path d="m8 12.5 6.7-6.7a3.5 3.5 0 0 1 5 5L10 20.5a5 5 0 0 1-7.1-7.1L13 3.3" /><path d="m7 13.5 8.5-8.5" /></>,
+    palette: <><path d="M12 3a9 9 0 1 0 0 18h1.2a2 2 0 0 0 1.4-3.4 1.4 1.4 0 0 1 1-2.4H18a3 3 0 0 0 3-3A9 9 0 0 0 12 3Z" /><circle cx="7.5" cy="10" r=".8" fill="currentColor" /><circle cx="10.5" cy="6.5" r=".8" fill="currentColor" /><circle cx="15" cy="7.5" r=".8" fill="currentColor" /></>,
+    textSize: <><path d="M4 19 10 5l6 14M6.2 14h7.6M17 8v11M14.5 10.5 17 8l2.5 2.5" /></>,
   }
 
   return <svg {...common}>{paths[name] ?? paths.leaf}</svg>

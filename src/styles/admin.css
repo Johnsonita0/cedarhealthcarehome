@@ -263,6 +263,10 @@
 .admin-email-preview__intro { margin: 0 0 18px; color: #66766b; font-size: 12px; line-height: 1.7; }
 .admin-email-preview__text { margin: 0 0 11px; color: #405548; font-size: 12px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
 .admin-email-preview__text a { color: #176132; text-decoration: underline; }
+.admin-email-preview__rich { color: #405548; font-size: 15px; line-height: 1.75; overflow-wrap: anywhere; }
+.admin-email-preview__rich p, .admin-email-preview__rich div { margin: 0 0 12px; }
+.admin-email-preview__rich a { color: #176132; text-decoration: underline; }
+.admin-email-preview__rich ul, .admin-email-preview__rich ol { padding-left: 22px; }
 .admin-email-preview__space { height: 8px; }
 .admin-email-preview__image { width: 100%; max-height: 360px; display: block; margin: 18px auto; border-radius: 6px; object-fit: cover; }
 .admin-email-preview__placeholder { padding: 18px; border: 1px dashed #dce7de; border-radius: 5px; color: #89968d; background: #f8faf8; font-size: 11px; text-align: center; }
@@ -305,7 +309,9 @@
 .admin-mail-message { min-width: 0; padding: 12px; border: 1px solid #e8eee9; border-radius: 5px; background: #fff; }
 .admin-mail-message.is-outbound { border-color: #dce9de; background: #f7faf7; }
 .admin-mail-message > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 9px; }
-.admin-mail-message > header strong { color: #46604d; font-size: 9px; overflow-wrap: anywhere; }
+.admin-mail-message__addresses { min-width: 0; display: grid; gap: 4px; }
+.admin-mail-message__addresses strong, .admin-mail-message__addresses small { color: #46604d; font-size: 9px; overflow-wrap: anywhere; }
+.admin-mail-message__addresses small { color: #78877d; }
 .admin-mail-message > header time { flex: 0 0 auto; color: #89958d; font-size: 8px; }
 .admin-mail-message > p { margin: 10px 0 0; color: #52665a; font-size: 10px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
 .admin-mail-reply { display: grid; gap: 8px; padding-top: 13px; border-top: 1px solid #e8eee9; }
@@ -315,15 +321,48 @@
 .admin-mail-reply > div small, .admin-mail-compose__footer > small { color: #859188; font-size: 8px; line-height: 1.6; }
 .admin-mail-compose-layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(260px, .9fr); align-items: start; gap: 14px; }
 .admin-mail-compose { display: grid; align-content: start; gap: 13px; padding: 20px; }
+.admin-mail-message-field { display: grid; gap: 7px; color: #44594c; font-size: 11px; font-weight: 600; }
+.admin-mail-editor { min-width: 0; display: grid; gap: 8px; }
+.admin-mail-editor__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 6px; border: 1px solid #dfe7e1; border-radius: 4px 4px 0 0; background: #f7faf7; }
+.admin-mail-editor__toolbar > button, .admin-mail-editor__tool > button { min-width: 34px; min-height: 31px; display: inline-grid; place-items: center; padding: 0 6px; border: 1px solid #dce5de; border-radius: 4px; color: #3f5947; background: #fff; cursor: pointer; font-size: 10px; }
+.admin-mail-editor__toolbar > button:hover, .admin-mail-editor__tool > button:hover { border-color: #9ab59d; background: #f4f8f4; }
+.admin-mail-editor__tool { position: relative; }
+.admin-mail-editor__popup, .admin-mail-editor__size-menu { position: absolute; z-index: 45; top: calc(100% + 5px); left: 0; display: flex; gap: 5px; padding: 8px; border: 1px solid #dfe7e1; border-radius: 5px; background: #fff; box-shadow: 0 8px 24px rgba(24,48,33,.14); }
+.admin-mail-editor__popup button { width: 21px; height: 21px; padding: 0; border: 1px solid rgba(0,0,0,.15); border-radius: 50%; cursor: pointer; }
+.admin-mail-editor__size-menu { min-width: 64px; flex-direction: column; }
+.admin-mail-editor__size-menu button { padding: 5px 8px; border: 0; border-radius: 3px; color: #405548; background: transparent; cursor: pointer; font-size: 10px; text-align: left; }
+.admin-mail-editor__size-menu button:hover { background: #f1f7f2; }
+.admin-mail-editor__link-form { display: flex; flex-wrap: wrap; gap: 7px; }
+.admin-mail-editor__link-form input { min-width: 160px; flex: 1; }
+.admin-mail-editor__body { min-height: 230px; padding: 12px; border: 1px solid #dfe7e1; border-radius: 0 0 4px 4px; outline: 0; color: #263a2d; background: #fff; font-size: 14px; font-weight: 400; line-height: 1.65; overflow-wrap: anywhere; }
+.admin-mail-editor__body:focus { border-color: #749477; box-shadow: 0 0 0 3px rgba(20,83,45,.08); }
+.admin-mail-editor__body:empty::before { color: #89968d; content: attr(data-placeholder); pointer-events: none; }
+.admin-mail-editor__body a { color: #176132; text-decoration: underline; }
+.admin-mail-editor__file { display: none !important; }
+.admin-mail-attachments { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.admin-mail-attachments:empty { display: none; }
+.admin-mail-attachments li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 9px; border: 1px solid #e2eae4; border-radius: 4px; color: #5b6f61; background: #f8faf8; font-size: 9px; }
+.admin-mail-attachments li span { overflow-wrap: anywhere; }
+.admin-mail-attachments li button { border: 0; color: #8d4a3f; background: transparent; cursor: pointer; font-size: 9px; }
+.admin-mail-editor__hint { color: #87948b; font-size: 8px; font-weight: 400; }
 .admin-mail-compose__footer { align-items: flex-end; flex-wrap: wrap; padding-top: 5px; }
 .admin-mail-compose__footer > small { max-width: 340px; }
 .admin-mail-compose__footer > div { display: flex; gap: 8px; }
 .admin-mail-preview { display: grid; gap: 8px; padding: 14px; border: 1px solid #e4ebe6; border-radius: 6px; background: #f8faf8; }
-.admin-mail-preview > .admin-newsletter-preview-wrap { margin-top: 0; }
-.admin-mail-preview .admin-published-manager__intro { margin-bottom: 0; }
-.admin-mail-preview .admin-published-manager__intro h3 { font-size: 12px; }
-.admin-mail-preview .admin-published-manager__intro > p:last-child { display: none; }
-.admin-mail-preview .admin-email-preview { width: 100%; }
+.admin-mail-preview__card { min-width: 0; overflow: hidden; border: 1px solid #e1e9e2; border-radius: 6px; background: #fff; }
+.admin-mail-preview__card > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 16px; border-bottom: 1px solid #edf1ed; }
+.admin-mail-preview__card > header img { width: 118px; height: auto; }
+.admin-mail-preview__card > header span { color: #728078; font-size: 9px; }
+.admin-mail-preview__card dl { display: grid; gap: 8px; margin: 0; padding: 14px 16px; border-bottom: 1px solid #edf1ed; }
+.admin-mail-preview__card dl > div { min-width: 0; display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 9px; }
+.admin-mail-preview__card dt { color: #859188; font-size: 9px; }
+.admin-mail-preview__card dd { min-width: 0; margin: 0; color: #3b5142; font-size: 9px; overflow-wrap: anywhere; }
+.admin-mail-preview__message { min-height: 110px; padding: 18px 16px; color: #405548; font-size: 13px; line-height: 1.75; overflow-wrap: anywhere; }
+.admin-mail-preview__message p, .admin-mail-preview__message div { margin: 0 0 12px; }
+.admin-mail-preview__message a { color: #176132; text-decoration: underline; }
+.admin-mail-preview__message ul, .admin-mail-preview__message ol { padding-left: 22px; }
+.admin-mail-preview__placeholder { color: #89968d; }
+.admin-mail-preview__card > footer { padding: 11px 16px; border-top: 1px solid #edf1ed; color: #7a887f; background: #f8faf8; font-size: 8px; text-align: center; }
 .admin-mail-error { margin-bottom: 12px; padding: 11px 13px; border: 1px solid #efd4cd; border-radius: 5px; color: #8d3e2e; background: #fff8f6; font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
 .admin-mobile-more { display: none; }
 
@@ -421,6 +460,10 @@
   .admin-mail-detail { min-height: 320px; }
   .admin-mail-reply > div { align-items: flex-start; flex-direction: column; }
   .admin-mail-compose { padding: 15px; }
+  .admin-mail-editor__toolbar { gap: 4px; padding: 5px; }
+  .admin-mail-editor__toolbar > button, .admin-mail-editor__tool > button { min-height: 34px; padding-inline: 8px; }
+  .admin-mail-editor__body { min-height: 200px; padding: 10px; }
+  .admin-mail-editor__link-form > button { flex: 1; }
   .admin-mail-preview { padding: 10px; }
   .admin-modal-backdrop { align-items: end; padding: 0; }
   .admin-modal { max-height: 92dvh; overflow-y: auto; padding: 24px 20px max(22px, env(safe-area-inset-bottom)); border-radius: 9px 9px 0 0; }
