@@ -767,13 +767,23 @@ function HomePage() {
               </div>
               <p className="section-heading__aside">From shared conversation to health check-ins, Cedar’s care is shaped around the people, routines, and moments that make a place feel like home.</p>
             </div>
-            <div className="care-gallery__grid" aria-label="Examples of care at home">
-              {everydayCareMoments.map((moment) => (
-                <figure className="care-gallery__card" key={moment.title}>
-                  <img src={moment.image} alt={moment.alt} loading="lazy" decoding="async" />
-                  <figcaption>{moment.title}</figcaption>
-                </figure>
-              ))}
+            <div className="care-gallery__marquee" role="region" aria-label="Examples of care at home" tabIndex={0}>
+              <div className="care-gallery__track">
+                {[false, true].map((isDuplicate) => (
+                  <div
+                    className={`care-gallery__grid${isDuplicate ? ' care-gallery__grid--duplicate' : ''}`}
+                    aria-hidden={isDuplicate ? 'true' : undefined}
+                    key={isDuplicate ? 'duplicate' : 'original'}
+                  >
+                    {everydayCareMoments.map((moment) => (
+                      <figure className="care-gallery__card" key={moment.title}>
+                        <img src={moment.image} alt={moment.alt} loading="lazy" decoding="async" />
+                        <figcaption>{moment.title}</figcaption>
+                      </figure>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="care-gallery__note">
               <span>Every care plan starts with listening to what matters to you.</span>
