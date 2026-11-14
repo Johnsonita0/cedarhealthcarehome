@@ -221,7 +221,7 @@ export default async function handler(req, res) {
 
       if (action === 'threads') {
         const requestedFolder = queryValue(req, 'folder')
-        const folder = requestedFolder === 'archive' || requestedFolder === 'sent' ? requestedFolder : 'inbox'
+        const folder = ['archive', 'sent', 'trash'].includes(requestedFolder) ? requestedFolder : 'inbox'
         const query = new URLSearchParams({ folders: folder, limit: '100' })
         const result = await resendRequest(`/inboxes/${encodeURIComponent(address)}/threads?${query.toString()}`)
         return sendJson(res, 200, { threads: result.data || [], hasMore: Boolean(result.has_more) })
@@ -268,6 +268,14 @@ export default async function handler(req, res) {
         body: { folder },
       })
       return sendJson(res, 200, { ok: true, folder: result.folder })
+    }
+
+    if (body.action === 'delete') {
+      if (typeof body.threadId !== 'string' || !idPattern.test(body.threadId)) {
+        return sendJson(res, 400, { error: 'Choose a valid email thread.' })
+      }
+      await resendRequest(getThreadPath(address, body.threadId), { method: 'DELETE' })
+      return sendJson(res, 200, { ok: true, folder: 'trash' })
     }
 
     if (body.action === 'reply') {

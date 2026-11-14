@@ -999,7 +999,10 @@ function CaregiverManagementView({ applicants, onStatus, onDelete }) {
                         <small>Application {application.reference_code}</small>
                         <small>Applied for {application.role || 'caregiving'}</small>
                       </span>
-                      <span className="admin-caregiver-card__toggle-label">{isExpanded ? 'Hide details' : 'View details'}</span>
+                      <span className="admin-caregiver-card__toggle-label">
+                        {isExpanded ? 'Hide details' : 'View details'}
+                        <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} size={15} />
+                      </span>
                     </button>
                     <span className={`admin-status-pill admin-status-pill--${accepted ? 'accepted' : contacted ? 'contacted' : 'new'}`}>
                       {accepted ? 'Accepted' : contacted ? 'Contacted' : 'New'}
@@ -1014,13 +1017,14 @@ function CaregiverManagementView({ applicants, onStatus, onDelete }) {
                       <p><Icon name="clock" size={16} />Applied {displayDate(application.created_at, { dateStyle: 'medium' })}</p>
                     </div>
                     <div className="admin-caregiver-card__actions">
-                      <a className="admin-secondary-button" href={`mailto:${application.email}`}>Email</a>
-                      {whatsappUrl && <a className="admin-secondary-button" href={whatsappUrl} target="_blank" rel="noreferrer">WhatsApp</a>}
-                      {!contacted && !accepted && <button type="button" className="admin-secondary-button" onClick={() => onStatus(application, 'contacted')}>Mark as contacted</button>}
+                      <a className="admin-secondary-button" href={`mailto:${application.email}`}><Icon name="mail" size={15} /> Email</a>
+                      {whatsappUrl && <a className="admin-secondary-button" href={whatsappUrl} target="_blank" rel="noreferrer"><Icon name="whatsapp" size={15} /> WhatsApp</a>}
+                      {!contacted && !accepted && <button type="button" className="admin-secondary-button" onClick={() => onStatus(application, 'contacted')}><Icon name="clock" size={15} /> Mark as contacted</button>}
                       <button type="button" className="admin-primary-button" onClick={() => onStatus(application, 'accepted')}>
+                        <Icon name={accepted ? 'mail' : 'check'} size={15} />
                         {accepted ? 'Resend acceptance email' : 'Mark as accepted'}
                       </button>
-                      <button type="button" className="admin-danger-button" onClick={() => onDelete(application)}>Delete</button>
+                      <button type="button" className="admin-danger-button" onClick={() => onDelete(application)}><Icon name="trash" size={15} /> Delete</button>
                     </div>
                   </div>
                 </article>
@@ -1281,7 +1285,12 @@ function AdminMailPreview({ from, to, subject, messageHtml, messageText }) {
         <div><dt>Subject</dt><dd>{subject || '(No subject)'}</dd></div>
       </dl>
       <div className="admin-mail-preview__message" dangerouslySetInnerHTML={{ __html: safeHtml || '<span class="admin-mail-preview__placeholder">Your message will appear here.</span>' }} />
-      <footer>Cedar Healthcare · Compassionate care, every day</footer>
+      <footer>
+        <p>Cedar Healthcare, LLC · 7412 N Western Ave, Chicago, IL 60645</p>
+        <p><a href="tel:+12242043281">224-204-3281</a></p>
+        <p><a href="mailto:support@cedarhealthcarehome.com">support@cedarhealthcarehome.com</a></p>
+        <p className="admin-mail-preview__copyright">© {new Date().getFullYear()} Cedar Healthcare, LLC</p>
+      </footer>
     </div>
   )
 }
@@ -1310,21 +1319,50 @@ function MailRichTextEditor({ value, attachments, onChange, onAttachmentsChange,
     })
   }
 
+  function rememberEditorSelection() {
+    const selection = window.getSelection()
+    if (selection?.rangeCount && editorRef.current) {
+      const range = selection.getRangeAt(0)
+      if (editorRef.current.contains(range.commonAncestorContainer)) {
+        savedRangeRef.current = range.cloneRange()
+      }
+    }
+  }
+
   function keepEditorSelection(event) {
+    rememberEditorSelection()
     event.preventDefault()
+  }
+
+  function getEditorSelectionRange() {
+    const savedRange = savedRangeRef.current
+    if (savedRange && editorRef.current?.contains(savedRange.commonAncestorContainer)) {
+      return savedRange.cloneRange()
+    }
+    const selection = window.getSelection()
+    if (!selection?.rangeCount || !editorRef.current?.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+      return null
+    }
+    return selection.getRangeAt(0).cloneRange()
   }
 
   function runCommand(command) {
     editorRef.current?.focus()
+    const range = getEditorSelectionRange()
+    const selection = window.getSelection()
+    if (range && selection) {
+      selection.removeAllRanges()
+      selection.addRange(range)
+    }
     document.execCommand(command, false, null)
     updateMessage()
   }
 
   function applyInlineStyle(property, valueToApply) {
     const selection = window.getSelection()
-    if (!selection?.rangeCount || !editorRef.current) return
-    const range = selection.getRangeAt(0)
-    if (range.collapsed || !editorRef.current.contains(range.commonAncestorContainer)) {
+    const range = getEditorSelectionRange()
+    if (!selection || !range || !editorRef.current) return
+    if (range.collapsed) {
       onError('Select message text before applying formatting.')
       return
     }
@@ -1336,14 +1374,14 @@ function MailRichTextEditor({ value, attachments, onChange, onAttachmentsChange,
     const nextRange = document.createRange()
     nextRange.selectNodeContents(span)
     selection.addRange(nextRange)
+    savedRangeRef.current = nextRange.cloneRange()
     updateMessage()
     editorRef.current.focus()
     onError('')
   }
 
   function openLinkEditor() {
-    const selection = window.getSelection()
-    savedRangeRef.current = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : null
+    savedRangeRef.current = getEditorSelectionRange()
     setLinkHref('')
     setLinkEditorOpen(true)
   }
@@ -1449,6 +1487,8 @@ function MailRichTextEditor({ value, attachments, onChange, onAttachmentsChange,
         aria-multiline="true"
         aria-label="Email message"
         data-placeholder="Write your message…"
+        onPointerUp={rememberEditorSelection}
+        onKeyUp={rememberEditorSelection}
         onInput={updateMessage}
         onPaste={(event) => {
           event.preventDefault()
@@ -1608,14 +1648,40 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
 
   async function archiveThread() {
     if (!selectedThread) return
-    const action = folder === 'archive' ? 'restore' : 'archive'
+    const action = folder === 'archive' || folder === 'trash' ? 'restore' : 'archive'
     setBusyAction(action)
     setError('')
     try {
       await requestAdminMail(session, {}, { action, address: selectedAddress, threadId: selectedThread.id })
       setSelectedThreadId(null)
+      if (folder === 'trash') setFolder('inbox')
       setThreadRefresh((value) => value + 1)
       onNotify(action === 'restore' ? 'Conversation restored to the inbox.' : 'Conversation archived.')
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function deleteThread() {
+    if (!selectedThread) return
+    const accepted = await confirmAction({
+      title: 'Move this conversation to Trash?',
+      message: 'Resend keeps it in Trash for 30 days before permanent deletion. You can restore it during that time.',
+      confirmLabel: 'Move to Trash',
+      dangerous: true,
+    })
+    if (!accepted) return
+    setBusyAction('delete')
+    setError('')
+    try {
+      await requestAdminMail(session, {}, { action: 'delete', address: selectedAddress, threadId: selectedThread.id })
+      setSelectedThreadId(null)
+      setMessages([])
+      setMailboxRefresh((value) => value + 1)
+      setThreadRefresh((value) => value + 1)
+      onNotify('Conversation moved to Trash.')
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -1661,6 +1727,15 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
     setError('')
   }
 
+  const emptyThreadTitle = selectedMailbox?.configured
+    ? folder === 'trash' ? 'Trash is empty' : 'No conversations'
+    : 'Mailbox unavailable'
+  const emptyThreadMessage = !selectedMailbox?.configured
+    ? 'This address was not returned by the existing Resend inboxes.'
+    : folder === 'trash'
+      ? 'Deleted conversations will appear here for 30 days.'
+      : `Messages for ${selectedAddress} will appear here.`
+
   return (
     <section className="admin-workspace admin-mail-workspace">
       <div className="admin-page-heading">
@@ -1681,9 +1756,9 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
         <div className="admin-mail-layout">
           <aside className="admin-panel admin-mail-sidebar">
             <div className="admin-mail-sidebar__heading"><div><p className="admin-kicker">Mailboxes</p><h3>Cedar addresses</h3></div></div>
-            <div className="admin-mailbox-list">
+            <div className="admin-mailbox-list" role="tablist" aria-label="Cedar mailboxes">
               {mailboxes.map((mailbox) => (
-                <button type="button" key={mailbox.address} className={`admin-mailbox-choice${selectedAddress === mailbox.address ? ' is-selected' : ''}`} onClick={() => setSelectedAddress(mailbox.address)}>
+                <button type="button" role="tab" aria-selected={selectedAddress === mailbox.address} key={mailbox.address} className={`admin-mailbox-choice${selectedAddress === mailbox.address ? ' is-selected' : ''}`} onClick={() => setSelectedAddress(mailbox.address)}>
                   <span><strong>{mailbox.label}</strong><small>{mailbox.address}</small>{mailbox.lastReceived && <small>Last received {displayDate(mailbox.lastReceived, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</small>}</span>
                   {mailbox.unread > 0 && <em>{mailbox.unread > 99 ? '99+' : mailbox.unread}</em>}
                   {!mailbox.configured && <small className="admin-mailbox-choice__status">Not found in Resend</small>}
@@ -1703,9 +1778,10 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
                 ['inbox', 'Inbox'],
                 ['sent', 'Sent'],
                 ['archive', 'Archive'],
+                ['trash', 'Trash'],
               ].map(([value, label]) => <button type="button" role="tab" aria-selected={folder === value} className={folder === value ? 'is-active' : ''} key={value} onClick={() => { setFolder(value); setError('') }}>{label}</button>)}
             </div>
-            <div className="admin-inbox admin-mail-inbox">
+            <div className={`admin-inbox admin-mail-inbox${selectedThread ? ' has-selected-thread' : ''}`}>
               <div className="admin-inbox__list">
                 {threadsLoading ? <div className="admin-empty-state"><p>Loading conversations…</p></div> : threads.length ? threads.map((thread) => (
                   <button type="button" className={`admin-request-row admin-mail-thread-row${selectedThreadId === thread.id ? ' is-selected' : ''}${thread.unread ? ' is-unread' : ''}`} key={thread.id} onClick={() => selectThread(thread)}>
@@ -1713,12 +1789,14 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
                     <span><strong>{thread.subject || '(No subject)'}</strong><small>{mailAddressLabel(thread.from)} · {displayDate(thread.received_at)}</small><span>{thread.email_count || 0} message{thread.email_count === 1 ? '' : 's'}</span></span>
                       {isUnreadMailThread(thread) && <em>New</em>}
                   </button>
-                )                ) : <div className="admin-empty-state"><Icon name="mail" size={24} /><h3>{selectedMailbox?.configured ? 'No conversations' : 'Mailbox unavailable'}</h3><p>{selectedMailbox?.configured ? `Messages for ${selectedAddress} will appear here.` : 'This address was not returned by the existing Resend inboxes.'}</p></div>}
+                )) : <div className="admin-empty-state"><Icon name={folder === 'trash' ? 'trash' : 'mail'} size={24} /><h3>{emptyThreadTitle}</h3><p>{emptyThreadMessage}</p></div>}
               </div>
               <div className="admin-inbox__detail admin-mail-detail">
                 {selectedThread ? (
                   <>
-                    <div className="admin-inbox__detail-head"><div><p className="admin-kicker">{mailAddressLabel(selectedThread.from || selectedThread.latest_email?.from)} · {displayDate(selectedThread.last_received || selectedThread.received_at, { dateStyle: 'full', timeStyle: 'short' })}</p><h3>{selectedThread.subject || '(No subject)'}</h3></div><button className="admin-secondary-button" type="button" disabled={Boolean(busyAction)} onClick={archiveThread}>{folder === 'archive' ? 'Restore' : 'Archive'}</button></div>
+                    <button className="admin-mail-detail__back" type="button" onClick={() => setSelectedThreadId(null)}><Icon name="arrow-left" size={16} /> All messages</button>
+                    <div className="admin-inbox__detail-head"><div><p className="admin-kicker">{mailAddressLabel(selectedThread.from || selectedThread.latest_email?.from)} · {displayDate(selectedThread.last_received || selectedThread.received_at, { dateStyle: 'full', timeStyle: 'short' })}</p><h3>{selectedThread.subject || '(No subject)'}</h3></div><div className="admin-mail-detail__actions">{folder !== 'trash' && <button className="admin-danger-button" type="button" aria-label="Move conversation to Trash" disabled={Boolean(busyAction)} onClick={deleteThread}><Icon name="trash" size={15} /> Delete</button>}<button className="admin-secondary-button" type="button" disabled={Boolean(busyAction)} onClick={archiveThread}><Icon name={folder === 'archive' || folder === 'trash' ? 'arrow-up' : 'archive'} size={15} />{folder === 'trash' ? 'Restore to inbox' : folder === 'archive' ? 'Restore' : 'Archive'}</button></div></div>
+                      {folder === 'trash' && <p className="admin-mail-trash-note">Resend will permanently delete this conversation after 30 days.</p>}
                     <div className="admin-mail-messages">
                       {threadLoading ? <p className="admin-muted">Loading messages…</p> : messages.map((message) => (
                         <article className={`admin-mail-message${message.direction === 'outbound' ? ' is-outbound' : ''}`} key={message.id}>
@@ -1727,7 +1805,7 @@ function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
                         </article>
                       ))}
                     </div>
-                    {folder !== 'archive' && selectedMailbox?.configured && (
+                    {folder !== 'archive' && folder !== 'trash' && selectedMailbox?.configured && (
                       <form className="admin-mail-reply" onSubmit={sendReply}>
                         <label htmlFor="admin-mail-reply">Reply from {selectedAddress}</label>
                         <textarea id="admin-mail-reply" value={reply} onChange={(event) => setReply(event.target.value)} maxLength="10000" rows="4" placeholder="Write a thoughtful reply…" required />

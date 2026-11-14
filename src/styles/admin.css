@@ -304,7 +304,11 @@
 .admin-mail-thread-row > span:nth-child(2) > span { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .admin-mail-thread-row.is-unread strong { color: #1d472c; font-weight: 700; }
 .admin-mail-detail { min-width: 0; display: flex; flex-direction: column; gap: 13px; }
+.admin-mail-detail__back { display: none; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid #e1e9e2; border-radius: 6px; color: #315b40; background: #fff; cursor: pointer; font-size: 10px; font-weight: 600; }
 .admin-mail-detail .admin-inbox__detail-head h3 { overflow-wrap: anywhere; }
+.admin-mail-detail__actions { flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 7px; }
+.admin-mail-detail__actions > button { min-height: 36px; padding-inline: 10px; font-size: 10px; }
+.admin-mail-trash-note { margin: -5px 0 0; color: #829087; font-size: 9px; line-height: 1.5; }
 .admin-mail-messages { display: grid; gap: 9px; max-height: 420px; overflow-y: auto; }
 .admin-mail-message { min-width: 0; padding: 12px; border: 1px solid #e8eee9; border-radius: 5px; background: #fff; }
 .admin-mail-message.is-outbound { border-color: #dce9de; background: #f7faf7; }
@@ -362,7 +366,10 @@
 .admin-mail-preview__message a { color: #176132; text-decoration: underline; }
 .admin-mail-preview__message ul, .admin-mail-preview__message ol { padding-left: 22px; }
 .admin-mail-preview__placeholder { color: #89968d; }
-.admin-mail-preview__card > footer { padding: 11px 16px; border-top: 1px solid #edf1ed; color: #7a887f; background: #f8faf8; font-size: 8px; text-align: center; }
+.admin-mail-preview__card > footer { display: grid; gap: 5px; padding: 14px 16px; border-top: 1px solid #edf1ed; color: #6d7b71; background: #f8faf8; font-size: 9px; line-height: 1.6; text-align: center; }
+.admin-mail-preview__card > footer p { margin: 0; }
+.admin-mail-preview__card > footer a { color: #315b40; text-decoration: none; }
+.admin-mail-preview__card > footer .admin-mail-preview__copyright { margin-top: 5px; color: #9aa59c; font-size: 8px; }
 .admin-mail-error { margin-bottom: 12px; padding: 11px 13px; border: 1px solid #efd4cd; border-radius: 5px; color: #8d3e2e; background: #fff8f6; font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
 .admin-mobile-more { display: none; }
 
@@ -450,21 +457,53 @@
   .admin-mobile-more__item span { flex: 1; }
   .admin-mobile-more__item small { min-width: 22px; padding: 3px 6px; border-radius: 10px; color: #fff; background: #27623a; font-size: 8px; text-align: center; }
   .admin-mail-layout, .admin-mail-compose-layout { grid-template-columns: 1fr; }
-  .admin-mail-sidebar { padding: 13px; }
-  .admin-mailbox-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
-  .admin-mailbox-choice { min-width: 0; align-items: flex-start; flex-wrap: wrap; padding: 8px 7px; }
-  .admin-mailbox-choice > span { flex-basis: calc(100% - 28px); }
-  .admin-mailbox-choice .admin-mailbox-choice__status { width: 100%; }
+  .admin-mail-workspace { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+  .admin-mail-workspace .admin-page-heading { align-items: center; flex-direction: row; gap: 8px; }
+  .admin-mail-workspace .admin-page-heading > div:first-child > p:last-child { display: none; }
+  .admin-mail-workspace .admin-page-heading__actions { width: auto; flex: 0 0 auto; }
+  .admin-mail-workspace .admin-page-heading__actions > button { min-height: 40px; }
+  .admin-mail-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin-bottom: 12px; padding: 4px; border: 1px solid #e4ebe6; border-radius: 9px; background: #fff; }
+  .admin-mail-tabs button { min-height: 40px; justify-content: center; padding: 0 8px; border: 0; border-radius: 6px; color: #738178; }
+  .admin-mail-tabs button.is-active { color: #fff; background: #07520b; }
+  .admin-mail-sidebar { padding: 12px; border-radius: 10px; }
+  .admin-mail-sidebar__heading .admin-kicker { display: none; }
+  .admin-mail-sidebar__heading h3 { font-size: 12px; }
+  .admin-mailbox-list { display: flex; gap: 7px; margin-top: 8px; padding-bottom: 3px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+  .admin-mailbox-choice { min-width: max-content; flex: 0 0 auto; align-items: center; flex-wrap: nowrap; gap: 7px; padding: 9px 11px; border: 1px solid #e2eae4; border-radius: 999px; background: #fff; scroll-snap-align: start; }
+  .admin-mailbox-choice > span { flex: 0 0 auto; }
+  .admin-mailbox-choice strong { font-size: 10px; }
+  .admin-mailbox-choice small:not(.admin-mailbox-choice__status) { display: none; }
+  .admin-mailbox-choice em { min-width: 19px; }
+  .admin-mailbox-choice .admin-mailbox-choice__status { width: auto; display: block; font-size: 8px; }
+  .admin-mail-note { display: none; }
+  .admin-mail-folder-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; margin: 0 0 8px; padding: 4px; border: 1px solid #e4ebe6; border-radius: 9px; background: #fff; }
+  .admin-mail-folder-tabs button { min-height: 38px; justify-content: center; padding: 0 5px; border: 0; border-radius: 6px; font-size: 10px; }
+  .admin-mail-folder-tabs button.is-active { color: #28523a; background: #edf5ee; }
   .admin-mail-inbox { min-height: 0; grid-template-columns: 1fr; }
-  .admin-mail-inbox .admin-inbox__list { max-height: 250px; }
-  .admin-mail-detail { min-height: 320px; }
-  .admin-mail-reply > div { align-items: flex-start; flex-direction: column; }
-  .admin-mail-compose { padding: 15px; }
+  .admin-mail-inbox .admin-inbox__list { max-height: none; overflow: visible; border: 0; }
+  .admin-mail-inbox.has-selected-thread .admin-inbox__list { display: none; }
+  .admin-mail-inbox .admin-mail-detail { display: none; min-height: 0; padding: 0; }
+  .admin-mail-inbox.has-selected-thread .admin-mail-detail { display: flex; gap: 12px; }
+  .admin-mail-detail .admin-inbox__detail-head { flex-direction: column; }
+  .admin-mail-detail__actions > button { min-height: 40px; }
+  .admin-mail-detail__back { align-self: flex-start; display: inline-flex; min-height: 40px; }
+  .admin-mail-messages { max-height: none; overflow: visible; }
+  .admin-mail-message { padding: 14px; border-radius: 8px; }
+  .admin-mail-message__addresses strong, .admin-mail-message__addresses small { font-size: 11px; }
+  .admin-mail-message > p { font-size: 13px; line-height: 1.75; }
+  .admin-mail-reply > div { align-items: center; flex-direction: row; flex-wrap: wrap; }
+  .admin-mail-reply > div small { flex: 1 1 150px; font-size: 9px; }
+  .admin-mail-reply > div button { min-height: 42px; }
+  .admin-mail-compose { padding: 16px; border-radius: 10px; }
+  .admin-mail-compose input { min-height: 44px; }
   .admin-mail-editor__toolbar { gap: 4px; padding: 5px; }
-  .admin-mail-editor__toolbar > button, .admin-mail-editor__tool > button { min-height: 34px; padding-inline: 8px; }
+  .admin-mail-editor__toolbar > button, .admin-mail-editor__tool > button { min-width: 38px; min-height: 38px; padding-inline: 7px; }
   .admin-mail-editor__body { min-height: 200px; padding: 10px; }
   .admin-mail-editor__link-form > button { flex: 1; }
   .admin-mail-preview { padding: 10px; }
+  .admin-mail-compose__footer > small { max-width: none; font-size: 9px; }
+  .admin-mail-compose__footer > div { width: 100%; display: grid; grid-template-columns: .8fr 1.2fr; }
+  .admin-mail-compose__footer > div button { min-height: 44px; padding-inline: 10px; font-size: 10px; }
   .admin-modal-backdrop { align-items: end; padding: 0; }
   .admin-modal { max-height: 92dvh; overflow-y: auto; padding: 24px 20px max(22px, env(safe-area-inset-bottom)); border-radius: 9px 9px 0 0; }
 }
@@ -683,4 +722,14 @@
   .admin-assignment-form {
     grid-template-columns: 1fr;
   }
+
+  .admin-caregiver-card__top { align-items: flex-start; gap: 8px; padding: 14px; }
+  .admin-caregiver-card__toggle { align-items: flex-start; gap: 8px; }
+  .admin-caregiver-card__toggle-label { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; }
+  .admin-caregiver-card__details { gap: 12px; padding: 0 14px 14px; }
+  .admin-caregiver-card__contact { gap: 8px; }
+  .admin-caregiver-card__contact p { min-height: 32px; font-size: 12px; }
+  .admin-caregiver-card__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .admin-caregiver-card__actions > a,
+  .admin-caregiver-card__actions > button { min-width: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; font-size: 10px; line-height: 1.25; text-align: center; }
 }

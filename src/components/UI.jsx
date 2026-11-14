@@ -19,7 +19,9 @@ export function Icon({ name, size = 22, className = '' }) {
 
   const paths = {
     arrow: <><path d="M4.5 12h14" /><path d="m13 5.5 6.5 6.5-6.5 6.5" /></>,
+    'arrow-left': <><path d="M19.5 12h-14" /><path d="m11 5.5-6.5 6.5 6.5 6.5" /></>,
     'arrow-up': <><path d="M12 19V5" /><path d="m5.5 11.5 6.5-6.5 6.5 6.5" /></>,
+    archive: <><path d="M4 5h16v4H4z" /><path d="M6 9v10h12V9M9 13h6" /></>,
     image: <><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></>,
     cedar: <><path d="M19 6a9 9 0 1 0 0 12" /><circle cx="18.5" cy="5.5" r="1.8" fill="currentColor" stroke="none" /></>,
     care: <><path d="M12 21s-7.5-4.6-7.5-11a4.25 4.25 0 0 1 7.5-2.7 4.25 4.25 0 0 1 7.5 2.7c0 6.4-7.5 11-7.5 11Z" /><path d="M8.8 12h6.4M12 8.8v6.4" /></>,
@@ -49,6 +51,10 @@ export function Icon({ name, size = 22, className = '' }) {
     attachment: <><path d="m8 12.5 6.7-6.7a3.5 3.5 0 0 1 5 5L10 20.5a5 5 0 0 1-7.1-7.1L13 3.3" /><path d="m7 13.5 8.5-8.5" /></>,
     palette: <><path d="M12 3a9 9 0 1 0 0 18h1.2a2 2 0 0 0 1.4-3.4 1.4 1.4 0 0 1 1-2.4H18a3 3 0 0 0 3-3A9 9 0 0 0 12 3Z" /><circle cx="7.5" cy="10" r=".8" fill="currentColor" /><circle cx="10.5" cy="6.5" r=".8" fill="currentColor" /><circle cx="15" cy="7.5" r=".8" fill="currentColor" /></>,
     textSize: <><path d="M4 19 10 5l6 14M6.2 14h7.6M17 8v11M14.5 10.5 17 8l2.5 2.5" /></>,
+    check: <><path d="m5 12.5 4.5 4.5L19 7" /></>,
+    trash: <><path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3" /></>,
+    'chevron-down': <><path d="m6 9 6 6 6-6" /></>,
+    'chevron-up': <><path d="m6 15 6-6 6 6" /></>,
   }
 
   return <svg {...common}>{paths[name] ?? paths.leaf}</svg>
