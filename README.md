@@ -21,7 +21,8 @@ Use `npx vercel dev` when you need to run all Vercel API functions locally.
 4. Confirm the administrator's Supabase Auth user ID is `bb9a9a8e-83b6-4c7a-b101-dcfdfe9fd20c`. The console has no public sign-up flow; the UI, API, and RLS allow only this exact identity.
 5. Supabase Auth verifies and stores passwords server-side. Do not hash passwords in the browser or store them in the app; never put the service-role key in a `VITE_` variable.
 6. Verify the sender domain/address in Resend before sending live mail.
-7. To connect the client portal when its URL is available, set `VITE_CLIENT_APP_URL`.
+7. Admin Mail reads the existing Info, Admin, and Support inboxes from Resend; it does not create inboxes or depend on Google Workspace. For Resend to receive new messages at the Cedar domain, enable receiving for that domain in Resend or use forwarding from the current mail provider. Changing MX records can affect any existing mailbox provider, so do not change them unless that routing change is intended.
+8. To connect the client portal when its URL is available, set `VITE_CLIENT_APP_URL`.
 
 The service-role key is used only by Vercel server routes and never goes to the browser. Anonymous users cannot read or write care requests, subscriber records, or unpublished stories. RLS lets the allowlisted admin UID manage those records and lets the public read only published testimonials/content. The `testimonials` table should contain only stories Cedar has permission to publish.
 

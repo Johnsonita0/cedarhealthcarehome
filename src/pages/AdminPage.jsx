@@ -14,6 +14,7 @@ const navigation = [
   { id: 'dashboard', label: 'Dashboard', icon: 'home' },
   { id: 'content', label: 'Page content', icon: 'leaf' },
   { id: 'enquiries', label: 'Enquiries', icon: 'mail' },
+  { id: 'mail', label: 'Mail', icon: 'mail' },
   { id: 'caregivers', label: 'Caregivers', icon: 'people' },
   { id: 'testimonials', label: 'Testimonials', icon: 'quote' },
   { id: 'newsletter', label: 'Newsletter', icon: 'health' },
@@ -96,6 +97,8 @@ function AdminPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [activeView, setActiveView] = useState('dashboard')
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
+  const [mailUnreadCount, setMailUnreadCount] = useState(0)
   const [data, setData] = useState(emptyData)
   const [content, setContent] = useState(defaultSiteContent)
   const [dataLoading, setDataLoading] = useState(false)
@@ -704,6 +707,7 @@ function AdminPage() {
             <button type="button" className={activeView === item.id ? 'is-active' : ''} key={item.id} onClick={() => setActiveView(item.id)}>
               <Icon name={item.icon} size={18} /><span>{item.label}</span>
               {item.id === 'enquiries' && newRequestsCount > 0 && <span className="admin-nav-count">{newRequestsCount}</span>}
+              {item.id === 'mail' && mailUnreadCount > 0 && <span className="admin-nav-count">{mailUnreadCount > 99 ? '99+' : mailUnreadCount}</span>}
             </button>
           ))}
         </nav>
@@ -781,6 +785,14 @@ function AdminPage() {
             onDelete={deleteRequest}
           />
         )}
+        {activeView === 'mail' && (
+          <MailView
+            session={session}
+            confirmAction={confirmAction}
+            onNotify={notify}
+            onUnreadCountChange={setMailUnreadCount}
+          />
+        )}
         {activeView === 'caregivers' && (
           <CaregiverManagementView
             applicants={data.caregiverApplications}
@@ -822,19 +834,34 @@ function AdminPage() {
         )}
       </main>
 
+      {moreMenuOpen && (
+        <div className="admin-mobile-more" role="menu" aria-label="More admin sections">
+          {[
+            ['enquiries', 'Inbox', 'mail'],
+            ['testimonials', 'Reviews', 'quote'],
+            ['mail', 'Mail', 'mail'],
+            ['newsletter', 'Newsletter', 'health'],
+          ].map(([id, label, icon]) => (
+            <button type="button" role="menuitem" className="admin-mobile-more__item" key={id} onClick={() => { setActiveView(id); setMoreMenuOpen(false) }}>
+              <Icon name={icon} size={18} /><span>{label}</span>
+              {id === 'mail' && mailUnreadCount > 0 && <small>{mailUnreadCount > 99 ? '99+' : mailUnreadCount}</small>}
+            </button>
+          ))}
+        </div>
+      )}
       <nav className="admin-mobile-nav" aria-label="Mobile admin navigation">
         {[
           ['dashboard', 'Home', 'home'],
           ['content', 'Content', 'leaf'],
-          ['enquiries', 'Inbox', 'mail'],
           ['caregivers', 'Caregivers', 'people'],
-          ['testimonials', 'Reviews', 'quote'],
-          ['newsletter', 'Mail', 'health'],
         ].map(([id, label, icon]) => (
-          <button type="button" className={activeView === id ? 'is-active' : ''} key={id} onClick={() => setActiveView(id)}>
+          <button type="button" className={activeView === id ? 'is-active' : ''} key={id} onClick={() => { setActiveView(id); setMoreMenuOpen(false) }}>
             <Icon name={icon} size={19} /><span>{label}</span>
           </button>
         ))}
+        <button type="button" className={moreMenuOpen || ['enquiries', 'testimonials', 'mail', 'newsletter'].includes(activeView) ? 'is-active' : ''} aria-haspopup="menu" aria-expanded={moreMenuOpen} onClick={() => setMoreMenuOpen((isOpen) => !isOpen)}>
+          <Icon name="menu" size={19} /><span>More</span>
+        </button>
       </nav>
 
       {profileModalOpen && (
@@ -1149,6 +1176,323 @@ function PublishedContentManager({ publishedContent, draftContent, busy, onEdit,
   )
 }
 
+async function requestAdminMail(session, query, body) {
+  const search = new URLSearchParams(query)
+  const response = await fetch(`/api/admin-mail?${search.toString()}`, {
+    method: body ? 'POST' : 'GET',
+    cache: 'no-store',
+    headers: {
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  })
+  let result
+  try {
+    result = await response.json()
+  } catch {
+    throw new Error('The mail API did not return JSON. Use the deployed site or run the project with Vercel Functions enabled.')
+  }
+  if (!response.ok) throw new Error(result.error || 'The mail request could not be completed.')
+  return result
+}
+
+function mailMessageText(message) {
+  if (typeof message.text === 'string' && message.text.trim()) return message.text
+  return String(message.html || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/[ \t]+/g, ' ').trim()
+}
+
+function mailAddressLabel(value) {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) return value.map(mailAddressLabel).filter(Boolean).join(', ')
+  if (value && typeof value === 'object') return [value.name, value.email].filter(Boolean).join(' ')
+  return 'Unknown sender'
+}
+
+function isUnreadMailThread(thread) {
+  return thread.read === false
+}
+
+function MailView({ session, confirmAction, onNotify, onUnreadCountChange }) {
+  const [mailboxes, setMailboxes] = useState([])
+  const [selectedAddress, setSelectedAddress] = useState('')
+  const [folder, setFolder] = useState('inbox')
+  const [threads, setThreads] = useState([])
+  const [selectedThreadId, setSelectedThreadId] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [mailView, setMailView] = useState('inbox')
+  const [mailboxRefresh, setMailboxRefresh] = useState(0)
+  const [threadRefresh, setThreadRefresh] = useState(0)
+  const [mailboxLoading, setMailboxLoading] = useState(true)
+  const [threadsLoading, setThreadsLoading] = useState(false)
+  const [threadLoading, setThreadLoading] = useState(false)
+  const [busyAction, setBusyAction] = useState('')
+  const [error, setError] = useState('')
+  const [reply, setReply] = useState('')
+  const [compose, setCompose] = useState({ from: '', to: '', subject: '', message: '' })
+  const selectedThread = threads.find((thread) => thread.id === selectedThreadId)
+  const selectedMailbox = mailboxes.find((mailbox) => mailbox.address === selectedAddress)
+
+  useEffect(() => {
+    let active = true
+    setMailboxLoading(true)
+    requestAdminMail(session, { action: 'mailboxes' })
+      .then((result) => {
+        if (!active) return
+        const nextMailboxes = Array.isArray(result.mailboxes) ? result.mailboxes : []
+        setMailboxes(nextMailboxes)
+        onUnreadCountChange(nextMailboxes.reduce((total, mailbox) => total + (Number(mailbox.unread) || 0), 0))
+        setSelectedAddress((current) => current && nextMailboxes.some((mailbox) => mailbox.address === current)
+          ? current
+          : nextMailboxes.find((mailbox) => mailbox.address === 'support@cedarhealthcarehome.com')?.address || nextMailboxes[0]?.address || '')
+        setCompose((current) => ({
+          ...current,
+          from: current.from || nextMailboxes.find((mailbox) => mailbox.address === 'support@cedarhealthcarehome.com')?.address || nextMailboxes[0]?.address || '',
+        }))
+        setError('')
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message)
+      })
+      .finally(() => {
+        if (active) setMailboxLoading(false)
+      })
+    return () => { active = false }
+  }, [session, mailboxRefresh, onUnreadCountChange])
+
+  useEffect(() => {
+    let active = true
+    if (!selectedAddress || mailboxLoading) return () => { active = false }
+    if (!selectedMailbox?.configured) {
+      setThreads([])
+      setThreadsLoading(false)
+      return () => { active = false }
+    }
+
+    setThreadsLoading(true)
+    requestAdminMail(session, { action: 'threads', address: selectedAddress, folder })
+      .then((result) => {
+        if (!active) return
+        const nextThreads = Array.isArray(result.threads) ? result.threads : []
+        setThreads(nextThreads)
+        setError('')
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message)
+      })
+      .finally(() => {
+        if (active) setThreadsLoading(false)
+      })
+    return () => { active = false }
+  }, [session, selectedAddress, folder, mailboxes, selectedMailbox?.configured, mailboxLoading, threadRefresh])
+
+  useEffect(() => {
+    setSelectedThreadId(null)
+    setMessages([])
+  }, [selectedAddress, folder])
+
+  useEffect(() => {
+    let active = true
+    if (!selectedThreadId || !selectedAddress) {
+      setMessages([])
+      return () => { active = false }
+    }
+    setThreadLoading(true)
+    requestAdminMail(session, { action: 'thread', address: selectedAddress, threadId: selectedThreadId })
+      .then((result) => {
+        if (active) setMessages(Array.isArray(result.emails) ? result.emails : [])
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message)
+      })
+      .finally(() => {
+        if (active) setThreadLoading(false)
+      })
+    return () => { active = false }
+  }, [session, selectedAddress, selectedThreadId, mailboxes, threadRefresh])
+
+  async function sendReply(event) {
+    event.preventDefault()
+    const lastMessage = messages[messages.length - 1]
+    if (!selectedThread || !lastMessage?.id) {
+      setError('This conversation has no message available to reply to.')
+      return
+    }
+    setBusyAction('reply')
+    setError('')
+    try {
+      await requestAdminMail(session, {}, {
+        action: 'reply',
+        address: selectedAddress,
+        threadId: selectedThread.id,
+        emailId: lastMessage.id,
+        message: reply,
+      })
+      setReply('')
+      setThreadRefresh((value) => value + 1)
+      onNotify('Your branded reply was sent.')
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function archiveThread() {
+    if (!selectedThread) return
+    const action = folder === 'archive' ? 'restore' : 'archive'
+    setBusyAction(action)
+    setError('')
+    try {
+      await requestAdminMail(session, {}, { action, address: selectedAddress, threadId: selectedThread.id })
+      setSelectedThreadId(null)
+      setThreadRefresh((value) => value + 1)
+      onNotify(action === 'restore' ? 'Conversation restored to the inbox.' : 'Conversation archived.')
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function sendNewMessage(event) {
+    event.preventDefault()
+    const accepted = await confirmAction({
+      title: 'Send this branded email?',
+      message: `Send this message from ${compose.from} to ${compose.to}?`,
+      confirmLabel: 'Send email',
+    })
+    if (!accepted) return
+    setBusyAction('compose')
+    setError('')
+    try {
+      await requestAdminMail(session, {}, {
+        action: 'compose',
+        address: compose.from,
+        to: compose.to,
+        subject: compose.subject,
+        message: compose.message,
+      })
+      setCompose((current) => ({ ...current, to: '', subject: '', message: '' }))
+      setFolder('sent')
+      setMailView('inbox')
+      setThreadRefresh((value) => value + 1)
+      onNotify('Your branded email was sent.')
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  function selectThread(thread) {
+    if (isUnreadMailThread(thread)) {
+      onUnreadCountChange((current) => Math.max(0, current - 1))
+      setThreads((current) => current.map((item) => item.id === thread.id ? { ...item, read: true } : item))
+    }
+    setSelectedThreadId(thread.id)
+    setReply('')
+    setError('')
+  }
+
+  return (
+    <section className="admin-workspace admin-mail-workspace">
+      <div className="admin-page-heading">
+        <div><p className="admin-kicker">Cedar team email</p><h2>Mail</h2><p>Read conversations and send branded replies from each Cedar address.</p></div>
+        <div className="admin-page-heading__actions">
+          {mailView === 'inbox' && <button className="admin-primary-button" type="button" onClick={() => { setMailView('compose'); setError('') }}><Icon name="mail" size={16} /> Compose email</button>}
+          {mailView === 'inbox' && selectedMailbox?.configured && <button className="admin-secondary-button" type="button" disabled={threadsLoading || mailboxLoading} onClick={() => setMailboxRefresh((value) => value + 1)}>Refresh</button>}
+        </div>
+      </div>
+
+      <div className="admin-review-tabs admin-mail-tabs" role="tablist" aria-label="Mail sections">
+        <button type="button" role="tab" aria-selected={mailView === 'inbox'} className={mailView === 'inbox' ? 'is-active' : ''} onClick={() => setMailView('inbox')}>Inbox</button>
+        <button type="button" role="tab" aria-selected={mailView === 'compose'} className={mailView === 'compose' ? 'is-active' : ''} onClick={() => setMailView('compose')}>Compose</button>
+      </div>
+
+      {error && <div className="admin-mail-error" role="alert">{error}</div>}
+      {mailView === 'inbox' ? (
+        <div className="admin-mail-layout">
+          <aside className="admin-panel admin-mail-sidebar">
+            <div className="admin-mail-sidebar__heading"><div><p className="admin-kicker">Mailboxes</p><h3>Cedar addresses</h3></div></div>
+            <div className="admin-mailbox-list">
+              {mailboxes.map((mailbox) => (
+                <button type="button" key={mailbox.address} className={`admin-mailbox-choice${selectedAddress === mailbox.address ? ' is-selected' : ''}`} onClick={() => setSelectedAddress(mailbox.address)}>
+                  <span><strong>{mailbox.name}</strong><small>{mailbox.address}</small>{mailbox.lastReceived && <small>Last received {displayDate(mailbox.lastReceived, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</small>}</span>
+                  {mailbox.unread > 0 && <em>{mailbox.unread > 99 ? '99+' : mailbox.unread}</em>}
+                  {!mailbox.configured && <small className="admin-mailbox-choice__status">Not found in Resend</small>}
+                </button>
+              ))}
+              {!mailboxes.length && !mailboxLoading && <p className="admin-muted">No mailboxes are available.</p>}
+            </div>
+            {mailboxLoading && <p className="admin-muted">Connecting to Resend…</p>}
+            {mailboxes.some((mailbox) => mailbox.configured) && (
+              <div className="admin-mail-note"><strong>Connected to Resend</strong><p>Messages, sent mail, and replies are managed in these existing Resend inboxes. Sending uses the selected Cedar address.</p></div>
+            )}
+          </aside>
+
+          <div className="admin-mail-content">
+            <div className="admin-review-tabs admin-mail-folder-tabs" role="tablist" aria-label="Mail folders">
+              {[
+                ['inbox', 'Inbox'],
+                ['sent', 'Sent'],
+                ['archive', 'Archive'],
+              ].map(([value, label]) => <button type="button" role="tab" aria-selected={folder === value} className={folder === value ? 'is-active' : ''} key={value} onClick={() => { setFolder(value); setError('') }}>{label}</button>)}
+            </div>
+            <div className="admin-inbox admin-mail-inbox">
+              <div className="admin-inbox__list">
+                {threadsLoading ? <div className="admin-empty-state"><p>Loading conversations…</p></div> : threads.length ? threads.map((thread) => (
+                  <button type="button" className={`admin-request-row admin-mail-thread-row${selectedThreadId === thread.id ? ' is-selected' : ''}${thread.unread ? ' is-unread' : ''}`} key={thread.id} onClick={() => selectThread(thread)}>
+                    <span className={`admin-status-dot${isUnreadMailThread(thread) ? '' : ' is-replied'}`} />
+                    <span><strong>{thread.subject || '(No subject)'}</strong><small>{mailAddressLabel(thread.from)} · {displayDate(thread.received_at)}</small><span>{thread.email_count || 0} message{thread.email_count === 1 ? '' : 's'}</span></span>
+                      {isUnreadMailThread(thread) && <em>New</em>}
+                  </button>
+                )                ) : <div className="admin-empty-state"><Icon name="mail" size={24} /><h3>{selectedMailbox?.configured ? 'No conversations' : 'Mailbox unavailable'}</h3><p>{selectedMailbox?.configured ? `Messages for ${selectedAddress} will appear here.` : 'This address was not returned by the existing Resend inboxes.'}</p></div>}
+              </div>
+              <div className="admin-inbox__detail admin-mail-detail">
+                {selectedThread ? (
+                  <>
+                    <div className="admin-inbox__detail-head"><div><p className="admin-kicker">{mailAddressLabel(selectedThread.from || selectedThread.latest_email?.from)} · {displayDate(selectedThread.last_received || selectedThread.received_at, { dateStyle: 'full', timeStyle: 'short' })}</p><h3>{selectedThread.subject || '(No subject)'}</h3></div><button className="admin-secondary-button" type="button" disabled={Boolean(busyAction)} onClick={archiveThread}>{folder === 'archive' ? 'Restore' : 'Archive'}</button></div>
+                    <div className="admin-mail-messages">
+                      {threadLoading ? <p className="admin-muted">Loading messages…</p> : messages.map((message) => (
+                        <article className={`admin-mail-message${message.direction === 'outbound' ? ' is-outbound' : ''}`} key={message.id}>
+                          <header><strong>{mailAddressLabel(message.from)}</strong><time>{displayDate(message.created_at || message.sent_at || message.received_at, { dateStyle: 'medium', timeStyle: 'short' })}</time></header>
+                          <p>{mailMessageText(message) || 'This message has no text content.'}</p>
+                        </article>
+                      ))}
+                    </div>
+                    {folder !== 'archive' && selectedMailbox?.configured && (
+                      <form className="admin-mail-reply" onSubmit={sendReply}>
+                        <label htmlFor="admin-mail-reply">Reply from {selectedAddress}</label>
+                        <textarea id="admin-mail-reply" value={reply} onChange={(event) => setReply(event.target.value)} maxLength="10000" rows="4" placeholder="Write a thoughtful reply…" required />
+                        <div><small>Your reply is sent with Cedar’s branded email template.</small><button className="admin-primary-button" type="submit" disabled={Boolean(busyAction) || !reply.trim()}>{busyAction === 'reply' ? 'Sending…' : 'Send reply'}</button></div>
+                      </form>
+                    )}
+                  </>
+                ) : <div className="admin-empty-state"><h3>Select a conversation</h3><p>Choose an email to view the full thread and reply.</p></div>}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="admin-mail-compose-layout">
+          <form className="admin-panel admin-mail-compose" onSubmit={sendNewMessage}>
+            <label>From<select value={compose.from} onChange={(event) => setCompose((current) => ({ ...current, from: event.target.value }))} required>{mailboxes.map((mailbox) => <option value={mailbox.address} key={mailbox.address} disabled={!mailbox.configured}>{mailbox.fromName} &lt;{mailbox.address}&gt;{mailbox.configured ? '' : ' (not found in Resend)'}</option>)}</select></label>
+            <label>To<input type="email" value={compose.to} onChange={(event) => setCompose((current) => ({ ...current, to: event.target.value }))} placeholder="client@example.com" required /></label>
+            <label>Subject<input value={compose.subject} onChange={(event) => setCompose((current) => ({ ...current, subject: event.target.value }))} maxLength="200" placeholder="How can we help?" required /></label>
+            <label>Message<textarea value={compose.message} onChange={(event) => setCompose((current) => ({ ...current, message: event.target.value }))} maxLength="10000" rows="12" placeholder="Write your message…" required /></label>
+            <div className="admin-mail-compose__footer"><small>Sent through Resend as a Cedar-branded email. Replies are managed in the selected Resend inbox.</small><div><button className="admin-secondary-button" type="button" onClick={() => setMailView('inbox')}>Cancel</button><button className="admin-primary-button" type="submit" disabled={Boolean(busyAction) || !mailboxes.some((mailbox) => mailbox.address === compose.from && mailbox.configured)}>{busyAction === 'compose' ? 'Sending…' : 'Send email'}</button></div></div>
+          </form>
+          <aside className="admin-mail-preview">
+            <p className="admin-kicker">Branded preview</p>
+            <NewsletterTemplatePreview draft={{ subject: compose.subject, body: compose.message }} title="Client email preview" intro="A message from Cedar Healthcare." ctaLabel="Talk with Cedar" placeholder="Your message will appear here." />
+          </aside>
+        </div>
+      )}
+    </section>
+  )
+}
+
 function InboxView({ requests, filter, selected, onFilterChange, onSelect, onStatus, onDelete }) {
   const visibleRequests = requests.filter((request) => filter === 'all' || (filter === 'new' ? request.status !== 'replied' : request.status === 'replied'))
   const isEmail = selected?.contact?.includes('@')
@@ -1193,8 +1537,15 @@ function NewsletterImagePanel({ draft, busy, onUpdate, onUpload, onInsert }) {
   )
 }
 
-function NewsletterTemplatePreview({ draft }) {
-  const lines = (draft.body || '').split(/\r?\n/)
+function NewsletterTemplatePreview({
+  draft,
+  title = 'Email template',
+  intro = 'A thoughtful update from Cedar Healthcare.',
+  ctaLabel = 'Visit Cedar Healthcare',
+  placeholder = 'Your newsletter message and images will appear here.',
+}) {
+  const body = draft.body || ''
+  const lines = body.split(/\r?\n/)
   const renderLine = (line, index) => {
     const image = /^!\[([^\]]*)\]\((https:\/\/[^\s)]+)\)$/.exec(line.trim())
     if (image) {
@@ -1220,14 +1571,14 @@ function NewsletterTemplatePreview({ draft }) {
 
   return (
     <section className="admin-newsletter-preview-wrap">
-      <div className="admin-published-manager__intro"><p className="admin-kicker">Live draft preview</p><h3>Email template</h3><p>This is how the newsletter will appear with Cedar branding.</p></div>
+      <div className="admin-published-manager__intro"><p className="admin-kicker">Live draft preview</p><h3>{title}</h3><p>This is how the email will appear with Cedar branding.</p></div>
       <article className="admin-email-preview">
         <header><img src={cedarLogo} alt="Cedar Healthcare, LLC" /></header>
         <div className="admin-email-preview__body">
           <h2>{draft.subject || 'Your newsletter subject'}</h2>
-          <p className="admin-email-preview__intro">A thoughtful update from Cedar Healthcare.</p>
-          {draft.body.trim() ? lines.map(renderLine) : <p className="admin-email-preview__placeholder">Your newsletter message and images will appear here.</p>}
-          <a className="admin-email-preview__cta" href={publicSiteUrl}>Visit Cedar Healthcare</a>
+          <p className="admin-email-preview__intro">{intro}</p>
+          {body.trim() ? lines.map(renderLine) : <p className="admin-email-preview__placeholder">{placeholder}</p>}
+          <a className="admin-email-preview__cta" href={publicSiteUrl}>{ctaLabel}</a>
         </div>
         <footer>
           <nav aria-label="Email footer links"><a href={publicSiteUrl}>Visit Cedar</a><a href={`${publicSiteUrl}/#services`}>Our services</a><a href={`${publicSiteUrl}/#stories`}>Stories</a><a href={`${publicSiteUrl}/#contact`}>Request care</a><a href={`${publicSiteUrl}/privacy`}>Privacy policy</a><a href={`${publicSiteUrl}/terms`}>Terms of use</a></nav>
