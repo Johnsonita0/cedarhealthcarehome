@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AOS from 'aos'
 import 'aos/dist/aos.css'
 import { Brand, FormStatus, Icon, PortalLink, SearchableSelect } from '../components/UI.jsx'
@@ -363,6 +363,7 @@ function HomePage() {
   const [storiesError, setStoriesError] = useState(false)
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [siteContent, setSiteContent] = useState(null)
+  const careGalleryRef = useRef(null)
   const [caregiverForm, setCaregiverForm] = useState({
     fullName: '',
     email: '',
@@ -438,6 +439,130 @@ function HomePage() {
       })
       .catch(() => {})
     return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    const gallery = careGalleryRef.current
+    const track = gallery?.querySelector('.care-gallery__track')
+    const firstGroup = track?.firstElementChild
+    if (!gallery || !track || !firstGroup) return undefined
+
+    const mobileQuery = window.matchMedia('(max-width: 760px)')
+    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    let animationFrame = 0
+    let lastFrameTime = 0
+    let resumeTimer = 0
+    let paused = false
+    let pointerIsDown = false
+
+    function loopGallery() {
+      const groupWidth = firstGroup.getBoundingClientRect().width
+      if (groupWidth > 0 && gallery.scrollLeft < groupWidth) {
+        gallery.scrollLeft += groupWidth
+      } else if (groupWidth > 0 && gallery.scrollLeft >= groupWidth * 2) {
+        gallery.scrollLeft -= groupWidth
+      }
+    }
+
+    function animateGallery(time) {
+      if (!lastFrameTime) lastFrameTime = time
+      const elapsed = Math.min(time - lastFrameTime, 100)
+      lastFrameTime = time
+      if (!paused) {
+        gallery.scrollLeft += elapsed * 18 / 1000
+        loopGallery()
+      }
+      animationFrame = window.requestAnimationFrame(animateGallery)
+    }
+
+    function stopAnimation() {
+      if (animationFrame) window.cancelAnimationFrame(animationFrame)
+      animationFrame = 0
+      lastFrameTime = 0
+    }
+
+    function updateAnimation() {
+      if (!mobileQuery.matches || reducedMotionQuery.matches || document.hidden) {
+        stopAnimation()
+        if (!mobileQuery.matches || reducedMotionQuery.matches) gallery.scrollLeft = 0
+        return
+      }
+      const groupWidth = firstGroup.getBoundingClientRect().width
+      if (groupWidth > 0 && (gallery.scrollLeft < groupWidth || gallery.scrollLeft >= groupWidth * 2)) {
+        gallery.scrollLeft = groupWidth
+      }
+      if (!animationFrame) animationFrame = window.requestAnimationFrame(animateGallery)
+    }
+
+    function pauseAnimation() {
+      paused = true
+      if (resumeTimer) window.clearTimeout(resumeTimer)
+      resumeTimer = 0
+    }
+
+    function resumeAnimationSoon() {
+      if (resumeTimer) window.clearTimeout(resumeTimer)
+      resumeTimer = window.setTimeout(() => {
+        paused = false
+        resumeTimer = 0
+        lastFrameTime = 0
+      }, 3000)
+    }
+
+    function handleFocusOut(event) {
+      if (!gallery.contains(event.relatedTarget)) resumeAnimationSoon()
+    }
+
+    function handleWheel() {
+      pauseAnimation()
+      resumeAnimationSoon()
+    }
+
+    function handlePointerDown() {
+      pointerIsDown = true
+      pauseAnimation()
+    }
+
+    function handlePointerEnd() {
+      if (!pointerIsDown) return
+      pointerIsDown = false
+      resumeAnimationSoon()
+    }
+
+    gallery.addEventListener('pointerdown', handlePointerDown, { passive: true })
+    gallery.addEventListener('wheel', handleWheel, { passive: true })
+    gallery.addEventListener('focusin', pauseAnimation)
+    gallery.addEventListener('focusout', handleFocusOut)
+    gallery.addEventListener('pointerup', handlePointerEnd)
+    gallery.addEventListener('pointercancel', handlePointerEnd)
+    gallery.addEventListener('touchstart', handlePointerDown, { passive: true })
+    gallery.addEventListener('touchend', handlePointerEnd, { passive: true })
+    gallery.addEventListener('touchcancel', handlePointerEnd, { passive: true })
+    window.addEventListener('pointerup', handlePointerEnd, { passive: true })
+    window.addEventListener('pointercancel', handlePointerEnd, { passive: true })
+    mobileQuery.addEventListener('change', updateAnimation)
+    reducedMotionQuery.addEventListener('change', updateAnimation)
+    document.addEventListener('visibilitychange', updateAnimation)
+    updateAnimation()
+
+    return () => {
+      stopAnimation()
+      if (resumeTimer) window.clearTimeout(resumeTimer)
+      gallery.removeEventListener('pointerdown', handlePointerDown)
+      gallery.removeEventListener('wheel', handleWheel)
+      gallery.removeEventListener('focusin', pauseAnimation)
+      gallery.removeEventListener('focusout', handleFocusOut)
+      gallery.removeEventListener('pointerup', handlePointerEnd)
+      gallery.removeEventListener('pointercancel', handlePointerEnd)
+      gallery.removeEventListener('touchstart', handlePointerDown)
+      gallery.removeEventListener('touchend', handlePointerEnd)
+      gallery.removeEventListener('touchcancel', handlePointerEnd)
+      window.removeEventListener('pointerup', handlePointerEnd)
+      window.removeEventListener('pointercancel', handlePointerEnd)
+      mobileQuery.removeEventListener('change', updateAnimation)
+      reducedMotionQuery.removeEventListener('change', updateAnimation)
+      document.removeEventListener('visibilitychange', updateAnimation)
+    }
   }, [])
 
   useEffect(() => {
@@ -767,22 +892,25 @@ function HomePage() {
               </div>
               <p className="section-heading__aside">From shared conversation to health check-ins, Cedar’s care is shaped around the people, routines, and moments that make a place feel like home.</p>
             </div>
-            <div className="care-gallery__marquee" role="region" aria-label="Examples of care at home" tabIndex={0}>
+            <div ref={careGalleryRef} className="care-gallery__marquee" role="region" aria-label="Examples of care at home" tabIndex={0}>
               <div className="care-gallery__track">
-                {[false, true].map((isDuplicate) => (
-                  <div
-                    className={`care-gallery__grid${isDuplicate ? ' care-gallery__grid--duplicate' : ''}`}
-                    aria-hidden={isDuplicate ? 'true' : undefined}
-                    key={isDuplicate ? 'duplicate' : 'original'}
-                  >
-                    {everydayCareMoments.map((moment) => (
-                      <figure className="care-gallery__card" key={moment.title}>
-                        <img src={moment.image} alt={moment.alt} loading="lazy" decoding="async" />
-                        <figcaption>{moment.title}</figcaption>
-                      </figure>
-                    ))}
-                  </div>
-                ))}
+                {['before', 'main', 'after'].map((copy) => {
+                  const isDuplicate = copy !== 'main'
+                  return (
+                    <div
+                      className={`care-gallery__grid${isDuplicate ? ' care-gallery__grid--duplicate' : ''}`}
+                      aria-hidden={isDuplicate ? 'true' : undefined}
+                      key={copy}
+                    >
+                      {everydayCareMoments.map((moment) => (
+                        <figure className="care-gallery__card" key={moment.title}>
+                          <img src={moment.image} alt={moment.alt} loading="lazy" decoding="async" />
+                          <figcaption>{moment.title}</figcaption>
+                        </figure>
+                      ))}
+                    </div>
+                  )
+                })}
               </div>
             </div>
             <div className="care-gallery__note">
