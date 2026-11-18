@@ -1,10 +1,11 @@
-import { getPublicSiteUrl, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson, validEmail } from './_shared.js'
+import { enforcePublicFormSecurity, getPublicSiteUrl, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson, validEmail } from './_shared.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
     return sendJson(res, 405, { error: 'Method not allowed.' })
   }
+  if (!await enforcePublicFormSecurity(req, res, { endpoint: 'subscribe', maxRequests: 5, windowSeconds: 3600 })) return
 
   const body = req.body && typeof req.body === 'object' ? req.body : {}
   if (isHoneypotFilled(body)) return sendJson(res, 200, { ok: true, emailSent: true })

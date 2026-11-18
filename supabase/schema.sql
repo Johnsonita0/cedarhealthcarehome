@@ -64,6 +64,14 @@ create table if not exists public.newsletter_campaigns (
   sent_at timestamptz not null default now()
 );
 
+create table if not exists public.api_rate_limits (
+  bucket_key text primary key,
+  window_started_at timestamptz not null default now(),
+  request_count integer not null check (request_count > 0)
+);
+create index if not exists api_rate_limits_window_started_at_idx
+  on public.api_rate_limits(window_started_at);
+
 alter table public.care_requests enable row level security;
 alter table public.newsletter_subscribers enable row level security;
 alter table public.testimonial_submissions enable row level security;
@@ -71,6 +79,7 @@ alter table public.testimonials enable row level security;
 alter table public.caregiver_applications enable row level security;
 alter table public.site_content enable row level security;
 alter table public.newsletter_campaigns enable row level security;
+alter table public.api_rate_limits enable row level security;
 
 alter table public.care_requests
   add column if not exists status text not null default 'new',
@@ -346,8 +355,54 @@ as $$
   select auth.uid() = 'bb9a9a8e-83b6-4c7a-b101-dcfdfe9fd20c'::uuid;
 $$;
 
+create or replace function public.consume_api_rate_limit(
+  p_bucket_key text,
+  p_max_requests integer,
+  p_window_seconds integer
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_count integer;
+begin
+  if p_bucket_key is null
+    or p_bucket_key !~ '^[a-f0-9]{64}$'
+    or p_max_requests is null
+    or p_max_requests < 1
+    or p_window_seconds is null
+    or p_window_seconds < 1 then
+    raise exception 'Invalid rate limit parameters.';
+  end if;
+
+  insert into public.api_rate_limits as current_bucket (bucket_key, window_started_at, request_count)
+  values (p_bucket_key, now(), 1)
+  on conflict (bucket_key) do update
+  set request_count = case
+        when current_bucket.window_started_at <= now() - pg_catalog.make_interval(secs => p_window_seconds) then 1
+        else current_bucket.request_count + 1
+      end,
+      window_started_at = case
+        when current_bucket.window_started_at <= now() - pg_catalog.make_interval(secs => p_window_seconds) then now()
+        else current_bucket.window_started_at
+      end
+  returning request_count into current_count;
+
+  if random() < 0.01 then
+    delete from public.api_rate_limits
+    where window_started_at < now() - interval '1 day';
+  end if;
+
+  return current_count <= p_max_requests;
+end;
+$$;
+
 revoke all on function public.is_cedar_admin() from public;
 grant execute on function public.is_cedar_admin() to anon, authenticated, service_role;
+revoke all on function public.consume_api_rate_limit(text, integer, integer) from public, anon, authenticated;
+grant execute on function public.consume_api_rate_limit(text, integer, integer) to service_role;
 
 -- Only server-side service_role routes may accept public form submissions.
 grant usage on schema public to anon, authenticated, service_role;
@@ -356,20 +411,25 @@ revoke all on public.care_requests from public, anon, authenticated;
 revoke all on public.newsletter_subscribers from public, anon, authenticated;
 revoke all on public.testimonial_submissions from public, anon, authenticated;
 revoke all on public.testimonials from public, anon, authenticated;
+revoke all on public.caregiver_applications from public, anon, authenticated;
 revoke all on public.site_content from public, anon, authenticated;
 revoke all on public.newsletter_campaigns from public, anon, authenticated;
+revoke all on public.api_rate_limits from public, anon, authenticated;
 
 grant all on public.care_requests to service_role;
 grant all on public.newsletter_subscribers to service_role;
 grant all on public.testimonial_submissions to service_role;
 grant all on public.testimonials to service_role;
+grant all on public.caregiver_applications to service_role;
 grant all on public.site_content to service_role;
 grant all on public.newsletter_campaigns to service_role;
+grant all on public.api_rate_limits to service_role;
 
 grant select, update, delete on public.care_requests to authenticated;
 grant select on public.newsletter_subscribers to authenticated;
 grant select, update, delete on public.testimonial_submissions to authenticated;
 grant select, insert, update, delete on public.testimonials to authenticated;
+grant select, update, delete on public.caregiver_applications to authenticated;
 grant select on public.testimonials to anon;
 revoke insert on public.care_requests from anon;
 revoke insert on public.newsletter_subscribers from anon;
@@ -425,8 +485,6 @@ create policy testimonials_admin_write on public.testimonials
   for all to authenticated using (public.is_cedar_admin())
   with check (public.is_cedar_admin());
 
-create policy caregiver_applications_insert on public.caregiver_applications
-  for insert to anon, authenticated with check (true);
 create policy caregiver_applications_admin_access on public.caregiver_applications
   for all to authenticated using (public.is_cedar_admin())
   with check (public.is_cedar_admin());

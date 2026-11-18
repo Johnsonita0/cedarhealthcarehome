@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { escapeHtml, getCareRequestRecipients, getPublicSiteUrl, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson, validEmail } from './_shared.js'
+import { enforcePublicFormSecurity, escapeHtml, getCareRequestRecipients, getPublicSiteUrl, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson, validEmail } from './_shared.js'
 
 const referenceAlphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 const allowedGenders = new Set(['Male', 'Female'])
@@ -27,6 +27,7 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'POST')
     return sendJson(res, 405, { error: 'Method not allowed.' })
   }
+  if (!await enforcePublicFormSecurity(req, res, { endpoint: 'caregiver-application', maxRequests: 3, windowSeconds: 3600 })) return
 
   const body = req.body && typeof req.body === 'object' ? req.body : {}
   if (isHoneypotFilled(body)) return sendJson(res, 200, { ok: true })

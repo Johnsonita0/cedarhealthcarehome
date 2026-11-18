@@ -1,10 +1,11 @@
-import { escapeHtml, getCareRequestRecipients, getPublicSiteUrl, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson } from './_shared.js'
+import { enforcePublicFormSecurity, escapeHtml, getCareRequestRecipients, getPublicSiteUrl, getResendConfig, getSupabaseConfig, insertRow, isHoneypotFilled, renderBrandedEmail, sendEmail, sendJson } from './_shared.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
     return sendJson(res, 405, { error: 'Method not allowed.' })
   }
+  if (!await enforcePublicFormSecurity(req, res, { endpoint: 'share-story', maxRequests: 3, windowSeconds: 3600 })) return
 
   const body = req.body && typeof req.body === 'object' ? req.body : {}
   if (isHoneypotFilled(body)) return sendJson(res, 200, { ok: true, notificationSent: true })

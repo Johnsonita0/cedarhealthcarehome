@@ -1,6 +1,107 @@
+import { createHmac } from 'node:crypto'
+import { isIP } from 'node:net'
+
 export function sendJson(res, status, payload) {
   res.status(status).setHeader('Content-Type', 'application/json; charset=utf-8')
   res.end(JSON.stringify(payload))
+}
+
+function getAllowedOrigins() {
+  const allowedOrigins = new Set()
+  const configuredOrigins = [
+    process.env.PUBLIC_SITE_URL || 'https://www.cedarhealthcarehome.com',
+    ...(process.env.PUBLIC_SITE_ALLOWED_ORIGINS || '').split(',').map((origin) => origin.trim()).filter(Boolean),
+  ]
+
+  for (const value of configuredOrigins) {
+    try {
+      const url = new URL(value.trim())
+      if (url.protocol === 'https:' || url.protocol === 'http:') allowedOrigins.add(url.origin)
+    } catch {
+      console.error('Ignoring an invalid public site origin.')
+    }
+  }
+
+  return allowedOrigins
+}
+
+function getClientIp(req) {
+  const forwardedFor = req.headers['x-forwarded-for']
+  const forwardedAddresses = typeof forwardedFor === 'string'
+    ? forwardedFor.split(',').reverse()
+    : []
+  const candidates = [
+    ...forwardedAddresses,
+    req.headers['x-real-ip'],
+    req.socket && req.socket.remoteAddress,
+  ]
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && isIP(candidate.trim())) return candidate.trim()
+  }
+  return ''
+}
+
+export async function enforcePublicFormSecurity(req, res, { endpoint, maxRequests, windowSeconds }) {
+  const origin = req.headers.origin
+  let requestOrigin = ''
+  try {
+    requestOrigin = typeof origin === 'string' ? new URL(origin).origin : ''
+  } catch {
+    requestOrigin = ''
+  }
+  if (!requestOrigin || requestOrigin !== origin || !getAllowedOrigins().has(requestOrigin)) {
+    sendJson(res, 403, { error: 'This request is not allowed.' })
+    return false
+  }
+
+  const clientIp = getClientIp(req)
+  if (!clientIp) {
+    console.error('Public form rate limiting could not identify the client address.')
+    sendJson(res, 503, { error: 'Submissions are temporarily unavailable. Please try again later.' })
+    return false
+  }
+
+  const { config, missing } = getSupabaseConfig()
+  if (missing.length) {
+    console.error('Public form rate limiting configuration is incomplete:', missing.join(', '))
+    sendJson(res, 503, { error: 'Submissions are temporarily unavailable. Please try again later.' })
+    return false
+  }
+
+  const bucketKey = createHmac('sha256', config.SUPABASE_SERVICE_ROLE_KEY)
+    .update(`${endpoint}:${clientIp}`)
+    .digest('hex')
+  try {
+    const response = await fetch(`${config.SUPABASE_URL}/rest/v1/rpc/consume_api_rate_limit`, {
+      method: 'POST',
+      headers: {
+        apikey: config.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${config.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        p_bucket_key: bucketKey,
+        p_max_requests: maxRequests,
+        p_window_seconds: windowSeconds,
+      }),
+    })
+    if (!response.ok) {
+      console.error('Public form rate limiting failed:', response.status, await response.text())
+      sendJson(res, 503, { error: 'Submissions are temporarily unavailable. Please try again later.' })
+      return false
+    }
+    if (await response.json() !== true) {
+      res.setHeader('Retry-After', String(windowSeconds))
+      sendJson(res, 429, { error: 'Too many submissions. Please wait and try again.' })
+      return false
+    }
+    return true
+  } catch (error) {
+    console.error('Public form rate limiting failed:', error)
+    sendJson(res, 503, { error: 'Submissions are temporarily unavailable. Please try again later.' })
+    return false
+  }
 }
 
 export function isHoneypotFilled(body) {
