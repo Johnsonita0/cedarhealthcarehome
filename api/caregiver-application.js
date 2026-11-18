@@ -75,7 +75,7 @@ export default async function handler(req, res) {
   const siteUrl = getPublicSiteUrl()
   const verifyUrl = `${siteUrl}/verify?reference=${encodeURIComponent(referenceCode)}`
   const { config: resend, missing: missingResend } = getResendConfig()
-  let adminRecipients = []
+  let adminRecipients = null
   const emailFailures = {}
   try {
     adminRecipients = getCareRequestRecipients(resend)
@@ -106,9 +106,10 @@ export default async function handler(req, res) {
       onFailure: (failure) => { emailFailures.confirmation = failure },
     })
 
-    const adminEmail = adminRecipients.length
+    const adminEmail = adminRecipients && adminRecipients.to.length
       ? sendEmail(resend, {
-        to: adminRecipients,
+        to: adminRecipients.to,
+        bcc: adminRecipients.bcc,
         subject: 'New caregiver application received',
         html: renderBrandedEmail({
           preheader: `New caregiver application from ${fullName}.`,

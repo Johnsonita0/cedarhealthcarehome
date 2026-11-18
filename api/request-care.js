@@ -61,7 +61,8 @@ export default async function handler(req, res) {
     button: { url: `${getPublicSiteUrl()}/admin`, label: 'Open admin inbox' },
   })
   const notificationSent = await sendEmail(resend, {
-    to: notificationRecipients,
+    to: notificationRecipients.to,
+    bcc: notificationRecipients.bcc,
     subject: `New care request from ${name}`,
     html: emailHtml,
     replyTo: validEmail(contact) ? contact : undefined,

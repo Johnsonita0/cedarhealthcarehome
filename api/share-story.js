@@ -64,7 +64,8 @@ export default async function handler(req, res) {
     button: { url: `${getPublicSiteUrl()}/admin`, label: 'Review testimonial' },
   })
   const notificationSent = await sendEmail(resend, {
-    to: notificationRecipients,
+    to: notificationRecipients.to,
+    bcc: notificationRecipients.bcc,
     subject: `A Cedar family story from ${name}`,
     html: emailHtml,
   })

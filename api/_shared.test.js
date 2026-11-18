@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
-import { enforcePublicFormSecurity } from './_shared.js'
+import { enforcePublicFormSecurity, getCareRequestRecipients, sendEmail } from './_shared.js'
 
 const environmentKeys = [
   'PUBLIC_SITE_URL',
@@ -101,4 +101,35 @@ test('returns 429 and a retry delay when the rate limit is exceeded', async () =
   }), false)
   assert.equal(response.statusCode, 429)
   assert.equal(response.headers['Retry-After'], '3600')
+})
+
+test('keeps the Cedar Gmail audit copy hidden from the visible recipient list', () => {
+  const recipients = getCareRequestRecipients({
+    CARE_REQUEST_RECIPIENT: 'cedarhealthcarehome@gmail.com;team@example.com',
+  })
+
+  assert.equal(recipients.bcc, 'cedarhealthcarehome@gmail.com')
+  assert.ok(recipients.to.includes('team@example.com'))
+  assert.ok(!recipients.to.some((address) => address.toLowerCase() === recipients.bcc))
+})
+
+test('sends the admin copy using BCC rather than CC', async () => {
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, 'https://api.resend.com/emails')
+    const body = JSON.parse(options.body)
+    assert.deepEqual(body.to, ['admin@cedarhealthcarehome.com'])
+    assert.equal(body.bcc, 'cedarhealthcarehome@gmail.com')
+    assert.equal(body.cc, undefined)
+    return { ok: true }
+  }
+
+  assert.equal(await sendEmail({
+    RESEND_API_KEY: 'test-key',
+    RESEND_FROM_EMAIL: 'support@cedarhealthcarehome.com',
+  }, {
+    to: ['admin@cedarhealthcarehome.com'],
+    bcc: 'cedarhealthcarehome@gmail.com',
+    subject: 'Test',
+    html: '<p>Test</p>',
+  }), true)
 })

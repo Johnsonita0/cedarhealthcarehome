@@ -112,8 +112,8 @@ export function isCaregiverReference(value) {
   return typeof value === 'string' && /^CED-\d{2}-[A-Z0-9]{5}-[A-Z0-9]{5}$/i.test(value)
 }
 
+const cedarAdminCopyEmail = 'cedarhealthcarehome@gmail.com'
 const cedarNotificationRecipients = [
-  'cedarhealthcarehome@gmail.com',
   'support@cedarhealthcarehome.com',
   'admin@cedarhealthcarehome.com',
   'info@cedarhealthcarehome.com',
@@ -166,8 +166,10 @@ export function getCareRequestRecipients(config) {
   }
 
   const recipients = new Map(cedarNotificationRecipients.map((recipient) => [recipient.toLowerCase(), recipient]))
-  for (const recipient of configuredRecipients) recipients.set(recipient.toLowerCase(), recipient)
-  return [...recipients.values()]
+  for (const recipient of configuredRecipients) {
+    if (recipient.toLowerCase() !== cedarAdminCopyEmail) recipients.set(recipient.toLowerCase(), recipient)
+  }
+  return { to: [...recipients.values()], bcc: cedarAdminCopyEmail }
 }
 
 export function getPublicSiteUrl() {
@@ -311,7 +313,7 @@ function resendFailureCode(detail) {
   }
 }
 
-export async function sendEmail(config, { to, subject, html, replyTo, onFailure }) {
+export async function sendEmail(config, { to, bcc, subject, html, replyTo, onFailure }) {
   try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -322,6 +324,7 @@ export async function sendEmail(config, { to, subject, html, replyTo, onFailure 
       body: JSON.stringify({
         from: config.RESEND_FROM_EMAIL,
         to,
+        ...(bcc ? { bcc } : {}),
         subject,
         html,
         ...(replyTo ? { reply_to: replyTo } : {}),
