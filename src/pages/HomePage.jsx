@@ -65,7 +65,7 @@ const heroSlideCandidates = [
     mobilePosition: 'center',
     brandSlide: true,
     eyebrow: 'Personalized home care in Chicago',
-    title: <>Cedar Healthcare home care in Chicago,<br />shaped around <em>your life.</em></>,
+    title: <>Home care in Chicago,<br />shaped around <em>your life.</em></>,
     description: 'From daily routines to changing health needs, Cedar Healthcare offers thoughtful, personalized support to help you feel comfortable, connected, and cared for at home.',
     imageCaption: 'Cedar Healthcare, LLC',
     noteTitle: 'Care that fits your day.',
@@ -802,7 +802,7 @@ function HomePage() {
       <main>
         <section className="hero" id="home" data-analytics-section="home">
           <div className="container hero__grid">
-            <div className="hero__visual">
+            <div className={`hero__visual${heroSlide.brandSlide ? ' hero__visual--brand' : ''}`}>
               <div className={`hero__image-wrap${heroSlide.brandSlide ? ' hero__image-wrap--brand' : ''}`}>
                 {carouselSlides.map((slide, index) => (
                   <img

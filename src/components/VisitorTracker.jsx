@@ -25,6 +25,7 @@ function VisitorTracker() {
   const [error, setError] = useState('')
   const [truncated, setTruncated] = useState(false)
   const [deletingVisitors, setDeletingVisitors] = useState(() => new Set())
+  const [aggregateToDelete, setAggregateToDelete] = useState(null)
 
   async function loadVisitors() {
     if (!supabase) {
@@ -64,8 +65,16 @@ function VisitorTracker() {
     void loadVisitors()
   }, [])
 
+  useEffect(() => {
+    if (!aggregateToDelete) return undefined
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setAggregateToDelete(null)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [aggregateToDelete])
+
   async function deleteAggregate(aggregate) {
-    if (!window.confirm('Delete this anonymous daily aggregate? Individual visitor records are not stored.')) return
     const key = aggregateKey(aggregate)
     setDeletingVisitors((current) => new Set(current).add(key))
     const { error: deleteError } = await supabase
@@ -140,7 +149,7 @@ function VisitorTracker() {
                       className="admin-danger-button"
                       type="button"
                       disabled={deletingVisitors.has(key)}
-                      onClick={() => void deleteAggregate(aggregate)}
+                      onClick={() => setAggregateToDelete(aggregate)}
                     >
                       <Icon name="trash" size={15} /> {deletingVisitors.has(key) ? 'Deleting…' : 'Delete'}
                     </button>
@@ -161,6 +170,20 @@ function VisitorTracker() {
             })}
           </div>
         </>
+      )}
+      {aggregateToDelete && (
+        <div className="admin-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setAggregateToDelete(null) }}>
+          <section className="admin-modal admin-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="visitor-delete-title" aria-describedby="visitor-delete-message">
+            <div className="admin-modal__heading">
+              <div><p className="admin-kicker">Please confirm</p><h2 id="visitor-delete-title">Delete anonymous aggregate?</h2></div>
+            </div>
+            <p id="visitor-delete-message">Individual visitor records are not stored. This will permanently delete the selected daily aggregate.</p>
+            <div className="admin-modal__actions">
+              <button className="admin-secondary-button" type="button" onClick={() => setAggregateToDelete(null)} autoFocus>Cancel</button>
+              <button className="admin-danger-button" type="button" onClick={() => { const selected = aggregateToDelete; setAggregateToDelete(null); void deleteAggregate(selected) }}>Delete aggregate</button>
+            </div>
+          </section>
+        </div>
       )}
     </section>
   )
