@@ -5,10 +5,10 @@
   "rewrites": [
     { "source": "/admin", "destination": "/index.html" },
     { "source": "/admin/:path*", "destination": "/index.html" },
-    { "source": "/verify", "destination": "/index.html" },
-    { "source": "/verify/:path*", "destination": "/index.html" },
-    { "source": "/privacy", "destination": "/index.html" },
-    { "source": "/terms", "destination": "/index.html" }
+    { "source": "/verify", "destination": "/verify.html" },
+    { "source": "/verify/:path*", "destination": "/verify.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" }
   ],
   "headers": [
     {

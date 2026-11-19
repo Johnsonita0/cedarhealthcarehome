@@ -29,3 +29,7 @@ The service-role key is used only by Vercel server routes and never goes to the 
 ## Deploy
 
 Import the repository root as the Vercel project root, add the server-side environment variables in the Vercel project settings, then deploy. Vercel serves the Vite build and the functions in `api/`.
+
+## Search engine metadata
+
+The home, privacy, terms, and caregiver status routes are built as separate HTML entry points so each route serves its own initial title, description, canonical URL, and social metadata. The privacy and terms metadata lives in `privacy.html` and `terms.html`; keep those files aligned with the route content if it changes. `public/robots.txt` points crawlers to `public/sitemap.xml`, which lists only public pages. The caregiver status route is excluded from indexing in both its HTML and Vercel response headers.

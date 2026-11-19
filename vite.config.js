@@ -77,6 +77,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), caregiverApiDevPlugin()],
     build: {
       rollupOptions: {
+        input: ['index.html', 'privacy.html', 'terms.html', 'verify.html'],
         output: {
           manualChunks(id) {
             if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'react'
