@@ -4,7 +4,7 @@ export const defaultSiteContent = {
   hero: {
     image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
     eyebrow: 'Personalized home care in Chicago',
-    headline: 'Support shaped around your life.',
+    headline: 'Home care in Chicago, shaped around your life.',
     introduction: 'From daily routines to changing health needs, Cedar offers thoughtful support to help you feel comfortable, connected, and cared for at home.',
     primaryLabel: 'Talk with our care team',
     primaryUrl: '#contact',
@@ -15,6 +15,14 @@ export const defaultSiteContent = {
     {
       question: 'What services do you offer?',
       answer: 'Cedar offers personal care, specialized care, companionship, homemaker services, and around-the-clock availability. Contact us to discuss which services may fit your needs.',
+    },
+    {
+      question: 'What does non-medical home care include?',
+      answer: 'Non-medical home care offers practical help with everyday activities rather than medical treatment. Depending on your routine, support may include personal care, companionship, meal preparation, light housekeeping, or errands. Contact Cedar to discuss which services and schedule may be appropriate.',
+    },
+    {
+      question: 'Can I arrange home care for a family member?',
+      answer: 'Yes. A family member can contact Cedar Healthcare to talk about a loved one’s daily routines, preferences, and the support they are looking for. Our Chicago home-care team can explain available services and scheduling options, and discuss next steps with the family.',
     },
     {
       question: 'How do I get started?',

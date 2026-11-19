@@ -1,0 +1,26 @@
+# Cedar Healthcare
+
+> Cedar Healthcare, LLC provides personalized home-care support in Chicago, Illinois.
+
+## Services
+
+- Personal care
+- Specialized care
+- Companionship
+- Homemaker services
+
+## Service area
+
+- Chicago, Illinois
+
+## Contact
+
+- Phone: +1-224-204-3281
+- Address: 7412 N Western Ave, Chicago, IL 60645
+- Website: https://www.cedarhealthcarehome.com/
+
+## Pages
+
+- [Home](https://www.cedarhealthcarehome.com/)
+- [Privacy policy](https://www.cedarhealthcarehome.com/privacy)
+- [Terms of use](https://www.cedarhealthcarehome.com/terms)

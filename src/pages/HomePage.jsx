@@ -65,7 +65,7 @@ const heroSlideCandidates = [
     mobilePosition: 'center',
     brandSlide: true,
     eyebrow: 'Personalized home care in Chicago',
-    title: <>Support shaped<br />around <em>your life.</em></>,
+    title: <>Home care in Chicago,<br />shaped around <em>your life.</em></>,
     description: 'From daily routines to changing health needs, Cedar offers thoughtful support to help you feel comfortable, connected, and cared for at home.',
     imageCaption: 'Cedar Healthcare, LLC',
     noteTitle: 'Care that fits your day.',
@@ -267,27 +267,27 @@ const heroSlides = heroSlideCandidates.reduce((uniqueSlides, slide) => {
 const services = [
   {
     title: 'Personal care',
-    description: 'Respectful help with bathing, dressing, grooming, mobility, and the daily routines that matter to you.',
+    description: 'Respectful help with bathing, dressing, grooming, safe mobility, and the daily routines that matter to you. We’ll discuss the support and timing that fits your preferences.',
     icon: 'care',
   },
   {
     title: 'Specialized care',
-    description: 'Personalized non-medical support shaped around individual routines, preferences, and changing day-to-day needs.',
+    description: 'Personalized non-medical support shaped around individual routines, preferences, and changing day-to-day needs, with service options discussed around your goals at home.',
     icon: 'heart',
   },
   {
     title: 'Companionship',
-    description: 'Friendly company, conversation, and a reassuring presence that can bring more connection to the day.',
+    description: 'Friendly company, conversation, shared activities, and a reassuring presence that can add connection to daily routines and interests at home.',
     icon: 'people',
   },
   {
     title: 'Homemaker services',
-    description: 'Practical help with meal preparation, light housekeeping, and everyday errands around the home.',
+    description: 'Practical help with meal preparation, light housekeeping, and everyday errands around the home, so daily tasks feel more manageable.',
     icon: 'home',
   },
   {
     title: '24/7 availability',
-    description: 'Talk with our team about scheduling options, including around-the-clock support, for your family’s needs.',
+    description: 'Talk with our team about scheduling options, including around-the-clock support, for your family’s needs. Availability depends on care needs and schedule; contact us to discuss options.',
     icon: 'clock',
   },
 ]
@@ -810,6 +810,8 @@ function HomePage() {
                     key={`${slide.image}-${index}`}
                     src={slide.image}
                     alt={slide.alt}
+                    width={slide.brandSlide ? 1066 : 1600}
+                    height={slide.brandSlide ? 368 : 1067}
                     style={{
                       '--hero-image-position': slide.position,
                       '--hero-image-position-mobile': slide.mobilePosition,
@@ -887,7 +889,7 @@ function HomePage() {
                     >
                       {everydayCareMoments.map((moment) => (
                         <figure className="care-gallery__card" key={moment.title}>
-                          <img src={moment.image} alt={moment.alt} loading="lazy" decoding="async" />
+                          <img src={moment.image} alt={moment.alt} width="800" height="600" loading="lazy" decoding="async" />
                           <figcaption>{moment.title}</figcaption>
                         </figure>
                       ))}
@@ -908,7 +910,7 @@ function HomePage() {
             <div className="about__intro">
               <p className="eyebrow eyebrow--light"><span className="eyebrow__line" /> A little about Cedar</p>
               <h2>Good care begins<br />with <em>being heard.</em></h2>
-              <p>Home is personal. We take time to understand what matters to each person and their family, then provide support that respects their routines and choices.</p>
+              <p>Home is personal. We take time to understand what matters to each person and their family, then provide support that respects their routines and choices. Our Chicago home-care team can discuss personal care and everyday help, from companionship and meals to light housekeeping and errands.</p>
               <a className="button button--cream" href="#contact">Meet your care team</a>
               <span className="about__leaf" aria-hidden="true"><Icon name="leaf" size={100} /></span>
             </div>

@@ -140,7 +140,7 @@ export function SearchableSelect({ id, value, options, onChange, placeholder = '
 export function Brand({ light = false }) {
   return (
     <a className={`brand${light ? ' brand--light' : ''}`} href="#home" aria-label="Cedar Healthcare home">
-      <img className="brand__logo" src={cedarLogo} alt="Cedar Healthcare, LLC" />
+      <img className="brand__logo" src={cedarLogo} alt="Cedar Healthcare, LLC" width="1066" height="368" />
     </a>
   )
 }
@@ -150,7 +150,7 @@ export function SiteSplash({ timed = false }) {
 
   return (
     <div className={`site-splash${timed ? ' site-splash--timed' : ''}`} role="status" aria-live="polite">
-      <img className="site-splash__logo" src="/cedar-logo.jpeg" alt="Cedar Healthcare" />
+      <img className="site-splash__logo" src="/cedar-logo.jpeg" alt="Cedar Healthcare" width="1066" height="368" />
       <div className="site-splash__progress" aria-hidden="true">
         <span className={`site-splash__progress-fill${progressClass}`} />
       </div>
