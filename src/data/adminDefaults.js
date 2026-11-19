@@ -4,8 +4,8 @@ export const defaultSiteContent = {
   hero: {
     image: 'https://images.pexels.com/photos/8088906/pexels-photo-8088906.jpeg?auto=compress&cs=tinysrgb&w=1600',
     eyebrow: 'Personalized home care in Chicago',
-    headline: 'Home care in Chicago, shaped around your life.',
-    introduction: 'From daily routines to changing health needs, Cedar offers thoughtful support to help you feel comfortable, connected, and cared for at home.',
+    headline: 'Cedar Healthcare home care in Chicago, shaped around your life.',
+    introduction: 'From daily routines to changing health needs, Cedar Healthcare offers thoughtful, personalized support to help you feel comfortable, connected, and cared for at home.',
     primaryLabel: 'Talk with our care team',
     primaryUrl: '#contact',
     secondaryLabel: 'Open App',

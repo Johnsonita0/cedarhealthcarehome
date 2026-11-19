@@ -65,8 +65,8 @@ const heroSlideCandidates = [
     mobilePosition: 'center',
     brandSlide: true,
     eyebrow: 'Personalized home care in Chicago',
-    title: <>Home care in Chicago,<br />shaped around <em>your life.</em></>,
-    description: 'From daily routines to changing health needs, Cedar offers thoughtful support to help you feel comfortable, connected, and cared for at home.',
+    title: <>Cedar Healthcare home care in Chicago,<br />shaped around <em>your life.</em></>,
+    description: 'From daily routines to changing health needs, Cedar Healthcare offers thoughtful, personalized support to help you feel comfortable, connected, and cared for at home.',
     imageCaption: 'Cedar Healthcare, LLC',
     noteTitle: 'Care that fits your day.',
     noteDescription: 'Here when it matters.',
@@ -847,7 +847,7 @@ function HomePage() {
           <div className="container">
             <div className="section-heading section-heading--center">
               <p className="eyebrow"><span className="eyebrow__line" /> Home care in Chicago, Illinois</p>
-              <h2>Care that fits<br /><em>real life.</em></h2>
+              <h2>Daily routines and care<br /><em>that fits real life.</em></h2>
               <p>From everyday assistance to personalized home-care support, Cedar’s services are shaped around each person’s needs, routines, and goals.</p>
             </div>
             <div className="services__grid">
