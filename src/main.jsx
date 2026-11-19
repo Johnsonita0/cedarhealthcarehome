@@ -15,6 +15,19 @@ const isAdminRoute = currentPath === '/admin'
 const isLegalRoute = currentPath === '/privacy' || currentPath === '/terms'
 const isVerifyRoute = currentPath === '/verify'
 
+function loadWebFonts() {
+  const fontStylesheet = document.createElement('link')
+  fontStylesheet.rel = 'stylesheet'
+  fontStylesheet.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap'
+  document.head.appendChild(fontStylesheet)
+}
+
+if ('requestIdleCallback' in window) {
+  window.requestIdleCallback(loadWebFonts, { timeout: 2000 })
+} else {
+  window.setTimeout(loadWebFonts, 1000)
+}
+
 function shouldShowEntrySplash() {
   if (!isHomeRoute && !isAdminRoute) return false
 
@@ -42,7 +55,7 @@ function App() {
 
   useEffect(() => {
     if (!showEntrySplash) return undefined
-    const timer = window.setTimeout(() => setShowSplash(false), 6000)
+    const timer = window.setTimeout(() => setShowSplash(false), 1200)
     return () => window.clearTimeout(timer)
   }, [])
 

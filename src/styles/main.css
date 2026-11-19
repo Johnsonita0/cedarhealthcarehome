@@ -48,7 +48,7 @@ img { display: block; max-width: 100%; }
 .site-splash__logo { width: min(230px, 70vw); max-height: 80px; object-fit: contain; }
 .site-splash__progress { width: min(220px, 62vw); height: 4px; overflow: hidden; border-radius: 999px; background: var(--sage); }
 .site-splash__progress-fill { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--gold); }
-.site-splash--timed .site-splash__progress-fill { animation: site-splash-progress 6s linear forwards; }
+.site-splash--timed .site-splash__progress-fill { animation: site-splash-progress 1.2s linear forwards; }
 .site-splash__progress-fill--indeterminate { width: 32%; animation: site-splash-indeterminate 1.3s ease-in-out infinite alternate; }
 @keyframes site-splash-progress { to { width: 100%; } }
 @keyframes site-splash-indeterminate { from { transform: translateX(-20%); } to { transform: translateX(220%); } }

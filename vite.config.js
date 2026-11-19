@@ -73,5 +73,19 @@ export default defineConfig(({ mode }) => {
     if (value) process.env[name] = value
   }
 
-  return { plugins: [react(), caregiverApiDevPlugin()] }
+  return {
+    plugins: [react(), caregiverApiDevPlugin()],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'react'
+            if (id.includes('node_modules/@supabase')) return 'supabase'
+            if (id.includes('node_modules/aos')) return 'aos'
+            return undefined
+          },
+        },
+      },
+    },
+  }
 })
