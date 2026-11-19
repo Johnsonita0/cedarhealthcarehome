@@ -261,7 +261,7 @@ a.contact-card:hover { background: rgba(255, 255, 255, .07); }
 
 @media (max-width: 760px) {
   :root { --sticky-header-offset: 68px; }
-  body { padding-bottom: 68px; }
+  body { padding-bottom: calc(58px + env(safe-area-inset-bottom)); }
   .container { width: calc(100% - 40px); }
   .section-pad { padding-block: 76px; }
   .site-header__inner { min-height: 70px; }
