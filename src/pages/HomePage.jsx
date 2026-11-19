@@ -800,7 +800,7 @@ function HomePage() {
       </header>
 
       <main>
-        <section className="hero" id="home">
+        <section className="hero" id="home" data-analytics-section="home">
           <div className="container hero__grid">
             <div className="hero__visual">
               <div className={`hero__image-wrap${heroSlide.brandSlide ? ' hero__image-wrap--brand' : ''}`}>
@@ -843,7 +843,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="services section-pad" id="services">
+        <section className="services section-pad" id="services" data-analytics-section="services">
           <div className="container">
             <div className="section-heading section-heading--center">
               <p className="eyebrow"><span className="eyebrow__line" /> Home care in Chicago, Illinois</p>
@@ -868,7 +868,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="care-gallery section-pad" aria-labelledby="care-gallery-title">
+        <section className="care-gallery section-pad" data-analytics-section="care-gallery" aria-labelledby="care-gallery-title">
           <div className="container">
             <div className="section-heading section-heading--row">
               <div>
@@ -905,7 +905,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="about section-pad" id="about">
+        <section className="about section-pad" id="about" data-analytics-section="about">
           <div className="container about__grid">
             <div className="about__intro">
               <p className="eyebrow eyebrow--light"><span className="eyebrow__line" /> A little about Cedar</p>
@@ -930,7 +930,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="care-focus section-pad" aria-labelledby="care-focus-title">
+        <section className="care-focus section-pad" data-analytics-section="care-focus" aria-labelledby="care-focus-title">
           <div className="container">
             <div className="section-heading section-heading--center">
               <p className="eyebrow"><span className="eyebrow__line" /> Care for changing needs</p>
@@ -958,7 +958,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="stories section-pad" id="stories">
+        <section className="stories section-pad" id="stories" data-analytics-section="stories">
           <div className="container">
             <div className="section-heading section-heading--row">
               <div>
@@ -1014,7 +1014,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="faq section-pad" id="faq">
+        <section className="faq section-pad" id="faq" data-analytics-section="faq">
           <div className="container faq__grid">
             <div className="faq__intro">
               <p className="eyebrow"><span className="eyebrow__line" /> Here to make it clearer</p>
@@ -1033,7 +1033,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="caregiver section-pad" id="caregivers">
+        <section className="caregiver section-pad" id="caregivers" data-analytics-section="caregivers">
           <div className="container caregiver__grid">
             <div className="caregiver__copy">
               <p className="eyebrow eyebrow--light"><span className="eyebrow__line" /> Join our team</p>
@@ -1125,7 +1125,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="contact section-pad" id="contact">
+        <section className="contact section-pad" id="contact" data-analytics-section="contact">
           <div className="container">
             <div className="contact__heading">
               <p className="eyebrow eyebrow--light"><span className="eyebrow__line" /> One conversation can be a start</p>
@@ -1176,7 +1176,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="newsletter" aria-labelledby="newsletter-title">
+        <section className="newsletter" data-analytics-section="newsletter" aria-labelledby="newsletter-title">
           <div className="container newsletter__inner">
             <div className="newsletter__copy">
               <span className="newsletter__icon"><Icon name="leaf" size={23} /></span>

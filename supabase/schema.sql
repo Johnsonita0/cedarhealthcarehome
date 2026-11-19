@@ -72,6 +72,65 @@ create table if not exists public.api_rate_limits (
 create index if not exists api_rate_limits_window_started_at_idx
   on public.api_rate_limits(window_started_at);
 
+-- Daily aggregates contain no visitor, IP, or browser identifiers.
+create table if not exists public.visitor_analytics (
+  visit_date date not null,
+  page text not null check (page in ('/', '/privacy', '/terms')),
+  section text not null default '' check (section = '' or section ~ '^[a-z0-9-]{1,60}$'),
+  device_type text not null check (device_type in ('mobile', 'tablet', 'desktop')),
+  country text not null check (country ~ '^[A-Z]{2}$'),
+  region text not null check (region = 'unknown' or region ~ '^[A-Za-z0-9 -]{1,64}$'),
+  visit_count bigint not null default 1 check (visit_count > 0),
+  expires_at timestamptz not null default (now() + interval '30 days'),
+  primary key (visit_date, page, section, device_type, country, region)
+);
+create index if not exists visitor_analytics_expires_at_idx
+  on public.visitor_analytics(expires_at);
+
+create or replace function public.record_visitor_analytics(
+  p_visit_date date,
+  p_page text,
+  p_section text,
+  p_device_type text,
+  p_country text,
+  p_region text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_visit_date is null
+    or p_page is null
+    or p_section is null
+    or p_device_type is null
+    or p_country is null
+    or p_region is null
+    or p_page not in ('/', '/privacy', '/terms')
+    or (p_section <> '' and p_section !~ '^[a-z0-9-]{1,60}$')
+    or p_device_type not in ('mobile', 'tablet', 'desktop')
+    or p_country !~ '^[A-Z]{2}$'
+    or (p_region <> 'unknown' and p_region !~ '^[A-Za-z0-9 -]{1,64}$') then
+    raise exception 'Invalid visitor analytics dimensions.' using errcode = '22023';
+  end if;
+
+  delete from public.visitor_analytics where expires_at <= now();
+  insert into public.visitor_analytics as current_analytics (
+    visit_date, page, section, device_type, country, region, visit_count, expires_at
+  )
+  values (
+    p_visit_date, p_page, p_section, p_device_type, p_country, p_region, 1, now() + interval '30 days'
+  )
+  on conflict (visit_date, page, section, device_type, country, region)
+  do update set
+    visit_count = current_analytics.visit_count + 1,
+    expires_at = excluded.expires_at;
+end;
+$$;
+revoke all on function public.record_visitor_analytics(date, text, text, text, text, text) from public, anon, authenticated;
+grant execute on function public.record_visitor_analytics(date, text, text, text, text, text) to service_role;
+
 alter table public.care_requests enable row level security;
 alter table public.newsletter_subscribers enable row level security;
 alter table public.testimonial_submissions enable row level security;
@@ -80,6 +139,7 @@ alter table public.caregiver_applications enable row level security;
 alter table public.site_content enable row level security;
 alter table public.newsletter_campaigns enable row level security;
 alter table public.api_rate_limits enable row level security;
+alter table public.visitor_analytics enable row level security;
 
 alter table public.care_requests
   add column if not exists status text not null default 'new',
@@ -415,6 +475,7 @@ revoke all on public.caregiver_applications from public, anon, authenticated;
 revoke all on public.site_content from public, anon, authenticated;
 revoke all on public.newsletter_campaigns from public, anon, authenticated;
 revoke all on public.api_rate_limits from public, anon, authenticated;
+revoke all on public.visitor_analytics from public, anon, authenticated;
 
 grant all on public.care_requests to service_role;
 grant all on public.newsletter_subscribers to service_role;
@@ -424,6 +485,7 @@ grant all on public.caregiver_applications to service_role;
 grant all on public.site_content to service_role;
 grant all on public.newsletter_campaigns to service_role;
 grant all on public.api_rate_limits to service_role;
+grant all on public.visitor_analytics to service_role;
 
 grant select, update, delete on public.care_requests to authenticated;
 grant select on public.newsletter_subscribers to authenticated;
@@ -431,6 +493,7 @@ grant select, update, delete on public.testimonial_submissions to authenticated;
 grant select, insert, update, delete on public.testimonials to authenticated;
 grant select, update, delete on public.caregiver_applications to authenticated;
 grant select on public.testimonials to anon;
+grant select, delete on public.visitor_analytics to authenticated;
 revoke insert on public.care_requests from anon;
 revoke insert on public.newsletter_subscribers from anon;
 revoke insert on public.testimonial_submissions from anon;
@@ -455,7 +518,8 @@ begin
         'testimonials',
         'caregiver_applications',
         'site_content',
-        'newsletter_campaigns'
+        'newsletter_campaigns',
+        'visitor_analytics'
       )
   loop
     execute format(
@@ -497,6 +561,11 @@ create policy site_content_admin_access on public.site_content
 
 create policy newsletter_campaigns_admin_read on public.newsletter_campaigns
   for select to authenticated using (public.is_cedar_admin());
+
+create policy visitor_analytics_admin_read on public.visitor_analytics
+  for select to authenticated using (public.is_cedar_admin());
+create policy visitor_analytics_admin_delete on public.visitor_analytics
+  for delete to authenticated using (public.is_cedar_admin());
 
 insert into public.site_content (id)
 values (1)

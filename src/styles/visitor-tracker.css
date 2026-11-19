@@ -1,0 +1,35 @@
+.admin-visitor-tracker { padding-top: 26px; }
+.admin-visitor-tracker__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.admin-visitor-tracker__heading h2 { margin: 0; color: #233d2e; font-size: 22px; font-weight: 600; }
+.admin-visitor-tracker__heading p:last-child { max-width: 700px; margin: 8px 0 0; color: #6f7d73; font-size: 11px; line-height: 1.65; }
+.admin-visitor-tracker__summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.admin-visitor-tracker__summary > div { display: grid; gap: 7px; padding: 16px; border: 1px solid #e4ebe6; border-radius: 6px; background: #fff; }
+.admin-visitor-tracker__summary span { color: #718077; font-size: 10px; }
+.admin-visitor-tracker__summary strong { color: #233d2e; font-size: 20px; font-weight: 600; }
+.admin-visitor-tracker__error, .admin-visitor-tracker__limit { padding: 12px 14px; border: 1px solid #edd8bd; border-radius: 5px; color: #785b23; background: #fff9ee; font-size: 11px; line-height: 1.6; }
+.admin-visitor-tracker__list { display: grid; gap: 10px; }
+.admin-visitor-card { min-width: 0; padding: 17px; border: 1px solid #e4ebe6; border-radius: 6px; background: #fff; }
+.admin-visitor-card__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.admin-visitor-card__heading .admin-kicker { margin: 0 0 5px; }
+.admin-visitor-card__heading h3 { margin: 0; color: #365141; font-size: 13px; font-weight: 600; text-transform: capitalize; }
+.admin-visitor-card__heading .admin-danger-button { min-height: 34px; font-size: 10px; }
+.admin-visitor-card__details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+.admin-visitor-card__details > div { min-width: 0; }
+.admin-visitor-card__details dt { color: #87948b; font-size: 9px; }
+.admin-visitor-card__details dd { margin: 5px 0 0; overflow-wrap: anywhere; color: #4a5e50; font-size: 11px; }
+.admin-visitor-card__history { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 7px 12px; padding-top: 12px; border-top: 1px solid #edf1ed; }
+.admin-visitor-card__history strong { color: #66776b; font-size: 10px; }
+.admin-visitor-card__history p { margin: 0; color: #4a5e50; font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
+
+@media (max-width: 760px) {
+  .admin-visitor-tracker { padding-top: 18px; }
+  .admin-visitor-tracker__heading { align-items: flex-start; }
+  .admin-visitor-tracker__heading h2 { font-size: 20px; }
+  .admin-visitor-tracker__heading > button { min-height: 36px; padding-inline: 9px; font-size: 10px; }
+  .admin-visitor-tracker__summary { gap: 8px; }
+  .admin-visitor-tracker__summary > div { padding: 12px; }
+  .admin-visitor-card { padding: 14px; }
+  .admin-visitor-card__details { grid-template-columns: 1fr 1fr; }
+  .admin-visitor-card__history { grid-template-columns: 1fr; gap: 4px; }
+  .admin-visitor-card__history strong:not(:first-child) { margin-top: 6px; }
+}

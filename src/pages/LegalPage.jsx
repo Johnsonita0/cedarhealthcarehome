@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { privacyPolicy, termsOfUse } from '../data/legalContent.js'
+import { analyticsPolicyEffectiveDate, analyticsPolicySection, privacyPolicy, termsOfUse } from '../data/legalContent.js'
 
 const publicSiteUrl = 'https://www.cedarhealthcarehome.com'
 
@@ -8,6 +8,12 @@ function LegalPage() {
   const policyKey = isTerms ? 'termsOfUse' : 'privacyPolicy'
   const fallbackPolicy = isTerms ? termsOfUse : privacyPolicy
   const [policy, setPolicy] = useState(fallbackPolicy)
+  const needsAnalyticsNotice = policyKey === 'privacyPolicy'
+    && !policy.sections.some((section) => section.title === analyticsPolicySection.title)
+  const policySections = needsAnalyticsNotice
+    ? [...policy.sections, analyticsPolicySection]
+    : policy.sections
+  const policyUpdated = needsAnalyticsNotice ? analyticsPolicyEffectiveDate : policy.updated
 
   useEffect(() => {
     let active = true
@@ -61,11 +67,11 @@ function LegalPage() {
           <header className="legal-page__heading">
             <p className="eyebrow"><span className="eyebrow__line" /> Cedar Healthcare, LLC</p>
             <h1>{policy.title}</h1>
-            <p className="legal-page__updated">Last updated {policy.updated}</p>
+            <p className="legal-page__updated">Last updated {policyUpdated}</p>
           </header>
           <p className="legal-page__intro">{policy.introduction}</p>
-          {policy.sections.map((section) => (
-            <section className="legal-page__section" key={section.title}>
+          {policySections.map((section, index) => (
+            <section className="legal-page__section" data-analytics-section={`policy-section-${index + 1}`} key={section.title}>
               <h2>{section.title}</h2>
               {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
             </section>

@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import HomePage from './pages/HomePage.jsx'
+import VisitorAnalytics from './components/VisitorAnalytics.jsx'
 import { ToastProvider } from './components/ToastProvider.jsx'
 import { SiteSplash } from './components/UI.jsx'
 import './styles/main.css'
@@ -70,6 +71,7 @@ function App() {
         : isLegalRoute
           ? <Suspense fallback={null}><LegalPage /></Suspense>
           : <HomePage />}
+      <VisitorAnalytics />
     </ToastProvider>
     </>
   )

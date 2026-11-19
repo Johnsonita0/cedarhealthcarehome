@@ -1,6 +1,16 @@
+export const analyticsPolicyEffectiveDate = 'November 19, 2026'
+
+export const analyticsPolicySection = {
+  title: 'Anonymous visitor analytics',
+  paragraphs: [
+    'Cedar collects anonymous daily totals for public page and section visits, device category, and approximate country or region supplied by the hosting provider. These totals do not include visitor IDs, IP addresses, or full browser identifiers, and cannot be used to find or delete an individual visitor’s activity. Aggregate records expire within 30 days.',
+    'Cedar’s hosting and security providers may separately process IP addresses and browser details to deliver and protect the website. Rate-limit controls use keyed hashes of IP addresses rather than storing raw addresses.',
+  ],
+}
+
 export const privacyPolicy = {
   title: 'Privacy policy',
-  updated: 'November 8, 2026',
+  updated: analyticsPolicyEffectiveDate,
   introduction: 'Cedar Healthcare, LLC (“Cedar”) respects your privacy. This policy explains what information Cedar collects through this website, how Cedar uses it, and the choices available to you.',
   sections: [
     {
@@ -27,9 +37,10 @@ export const privacyPolicy = {
     {
       title: 'Cookies and technical information',
       paragraphs: [
-        'This website does not currently use advertising or analytics cookies. Cedar’s hosting and security providers may process basic technical information, such as IP address, browser details, and request time, to deliver and protect the website.',
+        'This website does not use advertising cookies. Cedar’s hosting and security providers may process basic technical information, such as IP address, browser details, and request time, to deliver and protect the website.',
       ],
     },
+    analyticsPolicySection,
     {
       title: 'Retention and security',
       paragraphs: [

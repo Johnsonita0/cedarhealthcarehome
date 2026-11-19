@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon, SearchableSelect, SiteSplash } from '../components/UI.jsx'
+import VisitorTracker from '../components/VisitorTracker.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
 import { defaultSiteContent } from '../data/adminDefaults.js'
 import cedarLogo from '../images/logo/logo.jpeg'
@@ -18,6 +19,7 @@ const navigation = [
   { id: 'caregivers', label: 'Caregivers', icon: 'people' },
   { id: 'testimonials', label: 'Testimonials', icon: 'quote' },
   { id: 'newsletter', label: 'Newsletter', icon: 'health' },
+  { id: 'visitor-tracker', label: 'Visitor tracker', icon: 'search' },
 ]
 
 const editableSections = [
@@ -832,6 +834,7 @@ function AdminPage() {
             <NewsletterTemplatePreview draft={newsletter} />
           </>
         )}
+        {activeView === 'visitor-tracker' && <VisitorTracker />}
       </main>
 
       {moreMenuOpen && (
@@ -841,6 +844,7 @@ function AdminPage() {
             ['testimonials', 'Reviews', 'quote'],
             ['mail', 'Mail', 'mail'],
             ['newsletter', 'Newsletter', 'health'],
+            ['visitor-tracker', 'Visitors', 'search'],
           ].map(([id, label, icon]) => (
             <button type="button" role="menuitem" className="admin-mobile-more__item" key={id} onClick={() => { setActiveView(id); setMoreMenuOpen(false) }}>
               <Icon name={icon} size={18} /><span>{label}</span>
@@ -859,7 +863,7 @@ function AdminPage() {
             <Icon name={icon} size={19} /><span>{label}</span>
           </button>
         ))}
-        <button type="button" className={moreMenuOpen || ['enquiries', 'testimonials', 'mail', 'newsletter'].includes(activeView) ? 'is-active' : ''} aria-haspopup="menu" aria-expanded={moreMenuOpen} onClick={() => setMoreMenuOpen((isOpen) => !isOpen)}>
+        <button type="button" className={moreMenuOpen || ['enquiries', 'testimonials', 'mail', 'newsletter', 'visitor-tracker'].includes(activeView) ? 'is-active' : ''} aria-haspopup="menu" aria-expanded={moreMenuOpen} onClick={() => setMoreMenuOpen((isOpen) => !isOpen)}>
           <Icon name="menu" size={19} /><span>More</span>
         </button>
       </nav>
